@@ -1,7 +1,7 @@
 import requests
 import json
 import discord
-from discord import Activity, ActivityType, Intents
+from discord import Activity, ActivityType, Intents, app_commands
 from discord.ext.commands import Bot as BotBase
 from discord import File
 from io import BytesIO
@@ -10,10 +10,15 @@ import base64
 import asyncio
 import contextlib
 from os import listdir
+from config import TOKEN
 
 class bAIb_Ross(BotBase):
     def __init__(self):
         super().__init__(intents=Intents.default())
+        intents = discord.Intents.all()
+        client = discord.Client(intents=intents)
+        tree = app_commands.CommandTree(client)
+        intents.messages = True
 
         self.cwd = str(Path(__file__).parents[0].parents[0])
         self.token = "TOKEN"  # Your bot token or preferably a call to dot env.
