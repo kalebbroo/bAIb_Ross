@@ -1,11 +1,10 @@
-from discord.ext import commands, bot
-from discord import Option, OptionType, app_commands
+from discord.ext import commands, app_commands
 
 class Commands(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @bot.tree.command(name="dream", description="Generate an image using the Stable Diffusion API")
+    @commands.command(name="dream", description="Generate an image using the Stable Diffusion API")
     @app_commands.describe(prompt = "Enter the text prompt that you want the image to be generated from")
     @app_commands.describe(negative = "Enter any negative prompts to avoid certain elements in the image")
     @app_commands.describe(model = "Choose the model to be used for image generation")
@@ -18,9 +17,7 @@ class Commands(commands.Cog):
     @app_commands.describe(face_restoration = "Choose whether to apply face restoration to the generated image")
     @app_commands.describe(high_res_fix = "Choose whether to apply high resolution fix to the generated image")
     @app_commands.describe(denoising_strength = "Specify the strength of denoising to be applied to the generated image")
-
-
-    async def generate(self, interaction, prompt: str, model: str, steps: int, seed: int, negative: str = None, width: int = None, height: int = None, cfg: float = None, sampling: str = None, face_restoration: bool = None, high_res_fix: bool = None, denoising_strength: float = None):
+    async def generate(self, ctx: commands.Context, prompt: str, model: str, steps: int, seed: int, negative: str = None, width: int = None, height: int = None, cfg: float = None, sampling: str = None, face_restoration: bool = None, high_res_fix: bool = None, denoising_strength: float = None):
         # Call the text2image function with the provided options
         image = await self.bot.get_cog('text2image').txt2image(prompt, negative, steps, seed, cfg, width, height)
         
