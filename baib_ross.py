@@ -1,8 +1,9 @@
 import requests
 import json
 import discord
-from discord import Activity, ActivityType, Intents, app_commands
-from discord.ext.commands import Bot as BotBase
+import os
+from discord import Activity, ActivityType, Intents
+from discord.ext.commands import Bot
 from discord import File
 from io import BytesIO
 from pathlib import Path
@@ -12,37 +13,31 @@ import contextlib
 from os import listdir
 from config import TOKEN
 
-class bAIb_Ross(BotBase):
+class bAIb_Ross(Bot):
     def __init__(self):
-        super().__init__(intents=Intents.default())
-        intents = discord.Intents.all()
-        client = discord.Client(intents=intents)
-        tree = app_commands.CommandTree(client)
-        intents.messages = True
-
-        self.cwd = str(Path(__file__).parents[0].parents[0])
-        self.token = "TOKEN"  # Your bot token or preferably a call to dot env.
+        super().__init__(command_prefix='/', intents=Intents.default())
+        self.token = TOKEN
 
     async def on_connect(self):
         await self.change_presence(activity=Activity(type=ActivityType.watching, name="Slash Commands"))
 
     async def setup_hook(self):
-        for file in listdir(f"{self.cwd}/cogs"):
+        cogs_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cogs")
+        for file in os.listdir(cogs_dir):
             if file.endswith(".py") and not file.startswith("_"):
                 try:
-                    self.load_extension(f"cogs.{file[:-3]}")
+                    await self.load_extension(f"cogs.{file[:-3]}")
                 except Exception as e:
                     print(f"Error loading {file[:-3]} cog: {e}")
 
     async def main(self) -> None:
+        await self.setup_hook()
         async with self:
             await self.start(self.token)
 
     def starter(self):
         with contextlib.suppress(KeyboardInterrupt):
             asyncio.run(self.main())
-
-
 
 if __name__ == "__main__":
     bot = bAIb_Ross()

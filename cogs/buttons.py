@@ -59,7 +59,7 @@ class Buttons(commands.Cog):
         view = self.ImageView(ctx, image_urls)
         await ctx.message.edit(view=view)
 
-    @commands.Cog.listiner()
+    @commands.Cog.listener()
     async def on_interaction(self, interaction: Interaction):
         match interaction.data["custom_id"]:
             case "choose_img":
