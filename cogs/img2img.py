@@ -1,23 +1,9 @@
-#img2img functions
-#img2img functions
-import discord
 from discord.ext import commands
 
-
-class CogName(commands.Cog):
-    def __init__(self, bot:commands.Bot):
+class Img2Img(commands.Cog):
+    def __init__(self, bot):
         self.bot = bot
 
+async def setup(self) -> None:
+    await self.bot.add_cog(Img2Img(self.bot))
 
-    @commands.command(name = "commandName",
-                    usage="<usage>",
-                    description = "description")
-    @commands.guild_only()
-    @commands.has_permissions()
-    @commands.cooldown(1, 2, commands.BucketType.member)
-    async def commandName(self, ctx:commands.Context):
-        await ctx.send("template command")
-
-
-def setup(bot:commands.Bot):
-    bot.add_cog(CogName(bot))

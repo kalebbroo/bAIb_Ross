@@ -24,5 +24,5 @@ class PromptRewriter(commands.Cog):
         rewritten_prompt = response.choices[0].text.strip()
         await ctx.send(f"Rewritten Prompt: {rewritten_prompt}")
 
-def setup(bot: commands.Bot) -> None:
-    bot.add_cog(PromptRewriter(bot))
+async def setup(bot: commands.Bot) -> None:
+    await bot.add_cog(PromptRewriter(bot))

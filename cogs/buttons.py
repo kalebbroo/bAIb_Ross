@@ -2,6 +2,7 @@ from cogs.text2image import text2image
 from discord.ext import commands
 from discord import ButtonStyle, Interaction
 from discord.ui import Button, View
+import asyncio
 
 class Buttons(commands.Cog):
     def __init__(self, bot):
@@ -23,40 +24,39 @@ class Buttons(commands.Cog):
             self.add_item(Button(style=ButtonStyle.secondary, label="Randomize Seed", custom_id="randomize_seed"))
             self.add_item(Button(style=ButtonStyle.secondary, label="View Info", custom_id="view_info"))
 
-        async def choose_img(self, button: Button, interaction: Interaction):
+        async def choose_img(self, interaction: Interaction, button: Button):
             # Here you would implement the logic for choosing one of the images for img2img
             pass
 
-        async def upscale(self, button: Button, interaction: Interaction):
+        async def upscale(self, interaction: Interaction, button: Button):
             # Here you would implement the logic for upscaling and saving the image
             pass
 
-        async def regenerate(self, button: Button, interaction: Interaction):
+        async def regenerate(self, interaction: Interaction, button: Button):
             # Regenerate the image using the stored settings
             new_image = text2image(**self.settings)
             # Update the message with the new image
             await self.ctx.message.edit(content=new_image)
-            
 
-        async def delete(self, button: Button, interaction: Interaction):
+        async def delete(self, interaction: Interaction, button: Button):
             # Delete the message
             await self.ctx.message.delete()
 
-        async def edit_prompt(self, button: Button, interaction: Interaction):
+        async def edit_prompt(self, interaction: Interaction, button: Button):
             # Here you would implement the logic for editing the prompt
             pass
 
-        async def randomize_seed(self, button: Button, interaction: Interaction):
+        async def randomize_seed(self, interaction: Interaction, button: Button):
             # Here you would implement the logic for randomizing the seed
             pass
 
-        async def view_info(self, button: Button, interaction: Interaction):
+        async def view_info(self, interaction: Interaction, button: Button):
             # Here you would implement the logic for viewing the image's information
             pass
 
-    async def create_view(self, ctx, image_urls):
+    async def create_view(self, ctx, image_urls, settings):
         # Create the view and add it to the message
-        view = self.ImageView(ctx, image_urls)
+        view = self.ImageView(ctx, image_urls, settings)
         await ctx.message.edit(view=view)
 
     @commands.Cog.listener()
@@ -77,5 +77,5 @@ class Buttons(commands.Cog):
             case "view_info":
                 await interaction.view.view_info(interaction)
 
-def setup(bot: commands.Bot) -> None:
-    bot.add_cog(Buttons(bot))
+async def setup(bot: commands.Bot) -> None:
+    await bot.add_cog(Buttons(bot))
