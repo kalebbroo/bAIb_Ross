@@ -65,6 +65,9 @@ async def load_extensions():
 async def on_ready():
     print(f"Logged in as {bot.user.name}")
     await load_extensions()
+    fmt  = await bot.tree.sync()
+    print(f"synced {len(fmt)} commands")
+
 
 
 if __name__ == "__main__":

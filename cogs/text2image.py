@@ -1,8 +1,7 @@
+import os
 import discord
 from discord.ext import commands
 from discord.ext.commands import Bot as BotBase
-import requests
-import json
 import aiohttp
 from io import BytesIO
 from PIL import Image
@@ -19,19 +18,14 @@ class Text2Image(commands.Cog):
         async def on_ready(self):
             print("Bot is ready!")
 
-        @commands.command()
-        async def sync(self, ctx) -> None:
-            fmt  = await ctx.bot.tree.sync(guild=ctx.guild)
-            await ctx.send(f"synced {len(fmt)} commands")
-
 
 
     @staticmethod
     def create_payload(prompt, negative, steps, seed, cfg_scale, width, height, enable_hr=False, denoising_strength=0, firstphase_width=0,
                     firstphase_height=0, hr_scale=2, hr_upscaler="",
                     hr_second_pass_steps=0, hr_resize_x=0, hr_resize_y=0, styles=[], subseed=-1, subseed_strength=0,
-                    seed_resize_from_h=-1, seed_resize_from_w=-1, sampler_name="",
-                    batch_size=1, n_iter=1, restore_faces=False, tiling=False, eta=0,
+                    seed_resize_from_h=-1, seed_resize_from_w=-1, sampler_name="DPM++ 2S a Karras",
+                    batch_size=4, n_iter=1, restore_faces=False, tiling=False, eta=0,
                     s_churn=0, s_tmax=0, s_tmin=0, s_noise=1, override_settings={},
                     override_settings_restore_afterwards=True, script_args=[], sampler_index="Euler"):
         return {
@@ -77,19 +71,52 @@ class Text2Image(commands.Cog):
         url = "http://localhost:7860/sdapi/v1/txt2img"
         headers = {"Content-Type": "application/json"}
 
+        print(f"Payload: {payload}")
+
         async with aiohttp.ClientSession() as session:
             async with session.post(url, headers=headers, json=payload) as response:
                 if response.status == 200:
-                    return await response.json()
+                    response_data = await response.json()
+                    return response_data
                 else:
                     print(f"Error: {response.status}")
                     return None
                 
     async def pull_image(self, response):
-        image_data = response['images'][0]
-        image_data = base64.b64decode(image_data)
-        image_file = discord.File(BytesIO(image_data), filename="temp.png")
+        # Get the list of images from the response
+        images_data = response['images']
+
+        # Decode each image and convert it to a PIL Image object
+        images = [Image.open(BytesIO(base64.b64decode(image_data))) for image_data in images_data]
+
+        # Determine the grid size based on the number of images
+        grid_size = int(len(images) ** 0.5)
+
+        # Create a new image of the appropriate size to hold the grid
+        grid_image = Image.new('RGB', (grid_size * images[0].width, grid_size * images[0].height))
+
+        # Place each image into the grid and save each image individually
+        for i, image in enumerate(images):
+            row = i // grid_size
+            col = i % grid_size
+            grid_image.paste(image, (col * image.width, row * image.height))
+            folder_path = "image_cache"
+            if not os.path.exists(folder_path):
+                os.makedirs(folder_path)
+            image_path = os.path.join(folder_path, f"image_{i}.png")
+            image.save(image_path)
+
+        # Save the grid image to a BytesIO object
+        image_file = BytesIO()
+        grid_image.save(image_file, format='PNG')
+        image_file.seek(0)
+
+        # Wrap the BytesIO object in a File object for sending via Discord
+        image_file = discord.File(image_file, filename="temp.png")
+
         return image_file
+
+
         
 async def setup(bot):
     await bot.add_cog(Text2Image(bot))
