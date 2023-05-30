@@ -190,4 +190,3 @@ class Image2Image(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(Image2Image(bot))
-

@@ -73,6 +73,7 @@ class Commands(commands.Cog):
         image_file = await self.bot.get_cog('Text2Image').pull_image(image_data)
         # Create an instance of the ImageView
         buttons = self.bot.get_cog('Buttons').ImageView(interaction, image_data['images'], payload)
+        self.bot.get_cog('Buttons').payload = payload
 
         embed = await self.create_embed(interaction, prompt, negative, steps, seed, cfg_scale)
         await interaction.channel.send(embed=embed, file=image_file, view=buttons)

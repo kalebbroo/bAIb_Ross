@@ -11,6 +11,7 @@ import asyncio
 class Buttons(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.payload = None
 
 
     class ImageView(View):
@@ -47,6 +48,7 @@ class Buttons(commands.Cog):
 
 
         async def callback(self, interaction: Interaction):
+            await interaction.response.defer()
             # Get the selected image file
             selected_image_file = self.values[0]
 
@@ -74,6 +76,7 @@ class Buttons(commands.Cog):
 
 
         async def callback(self, interaction: Interaction):
+            await interaction.response.defer()
             # Get the selected image file
             selected_image_file = self.values[0]
 
@@ -96,6 +99,9 @@ class Buttons(commands.Cog):
     async def on_interaction(self, interaction: Interaction):
         if interaction.type == discord.InteractionType.component:
             button_id = interaction.data["custom_id"]
+            payload = self.bot.get_cog('Buttons').payload
+            self.payload = payload
+
             match button_id:
                 case "choose_img":
                     await interaction.response.defer()
