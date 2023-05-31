@@ -1,10 +1,22 @@
+import discord
 from discord.ext import commands
 from openai import OpenAI, GPT3Completion
+from copnfig import GPT_KEY
 
-class PromptRewriter(commands.Cog):
+class AIPromptGenerator(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.openai = OpenAI("YOUR_OPENAI_API_KEY")  # replace with your OpenAI API key
+        self.openai = OpenAI(f"{GPT_KEY}")
+
+    class GPT3Rewrite:
+        def __init__(self, prompt: str, original_prompt: str):
+            self.prompt = prompt
+            self.original_prompt = original_prompt
+
+    class AIModal(discord.ui.View):
+        def __init__(self, image: bytes, prompt: str):
+            super().__init__()
+            
 
     @commands.command(
         name="rewrite_prompt",
@@ -24,5 +36,5 @@ class PromptRewriter(commands.Cog):
         rewritten_prompt = response.choices[0].text.strip()
         await ctx.send(f"Rewritten Prompt: {rewritten_prompt}")
 
-async def setup(bot: commands.Bot) -> None:
-    await bot.add_cog(PromptRewriter(bot))
+async def setup(bot):
+    await bot.add_cog(AIPromptGenerator(bot))
