@@ -11,25 +11,6 @@ import os
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix='/', intents=intents)
 
-def upscale_image(image_path):
-    url = "http://localhost:7860/sdapi/v1/img2img"  # replace with the correct URL
-    headers = {"Content-Type": "application/json"}  # replace with the correct headers
-
-    # Read the image file and convert it to base64
-    with open(image_path, "rb") as image_file:
-        encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
-
-    data = {
-        "image": encoded_string
-    }
-
-    response = requests.post(url, headers=headers, data=json.dumps(data))
-    if response.status_code == 200:
-        return response.json()
-    else:
-        print(f"Error: {response.status_code}")
-        return None
-
 
 async def showcase(bot, image_data, info, channel_id):
     # Convert the base64 image data to bytes
@@ -67,6 +48,7 @@ async def on_ready():
     await load_extensions()
     fmt  = await bot.tree.sync()
     print(f"synced {len(fmt)} commands")
+    print(f"Loaded: {len(bot.cogs)} cogs")
 
 
 

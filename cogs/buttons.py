@@ -2,7 +2,7 @@ import os
 import discord
 from discord.ext import commands
 from discord import ButtonStyle, Interaction
-from discord.ui import Button, View, Select
+from discord.ui import Button, View, Select, Modal, TextInput, ActionRow
 import asyncio
 
 
@@ -22,11 +22,12 @@ class Buttons(commands.Cog):
             self.payload = payload
 
             # Add buttons to the view with custom ids
-            self.add_item(Button(style=ButtonStyle.secondary, label="Choose img", custom_id="choose_img"))
-            self.add_item(Button(style=ButtonStyle.primary, label="Upscale", custom_id="upscale"))
-            self.add_item(Button(style=ButtonStyle.success, label="Regenerate", custom_id="regenerate"))
-            self.add_item(Button(style=ButtonStyle.danger, label="Delete", custom_id="delete"))
-            self.add_item(Button(style=ButtonStyle.secondary, label="Edit Prompt", custom_id="edit_prompt"))
+            self.add_item(Button(style=ButtonStyle.success, label="Regenerate", custom_id="regenerate", row=1))
+            self.add_item(Button(style=ButtonStyle.primary, label="Upscale", custom_id="upscale", row=1))
+            self.add_item(Button(style=ButtonStyle.danger, label="Delete", custom_id="delete", row=1))
+            self.add_item(Button(style=ButtonStyle.secondary, label="Pick Source Image", custom_id="choose_img", row=2))
+            self.add_item(Button(style=ButtonStyle.secondary, label="Edit", custom_id="edit", row=2))
+            self.add_item(Button(style=ButtonStyle.secondary, label="AI Prompt Generator", custom_id="ai_prompt", row=2))
 
 
     class SelectMenuView(discord.ui.View):
@@ -90,10 +91,47 @@ class Buttons(commands.Cog):
 
 
 
-    async def create_view(self, ctx, image_urls, settings):
-        # Create the view and add it to the message
-        view = self.ImageView(ctx, image_urls, settings)
-        await ctx.message.edit(view=view)
+    class EditModal(Modal):
+        def __init__(self, payload):
+            super().__init__(title="Edit Prompt")
+            self.payload = payload
+
+            # Add a TextInput for the prompt
+            self.add_item(TextInput(placeholder="Enter the new prompt", custom_id="new_prompt", value=self.payload['prompt']))
+
+            # Add a TextInput for the negative prompt
+            self.add_item(TextInput(placeholder="Enter the new negative prompt", custom_id="new_negative", value=self.payload['negative_prompt']))
+
+            # Add a Button for submitting the changes
+            self.add_item(ActionRow(Button(style=ButtonStyle.primary, label="Submit", custom_id="submit_changes")))
+
+        async def callback(self, interaction: Interaction):
+            if interaction.data["custom_id"] == "submit_changes":
+                # Get the new values from the TextInput components
+                new_prompt = self.get_component("new_prompt").value
+                new_negative = self.get_component("new_negative").value
+
+                # Update the payload with the new values
+                self.payload['prompt'] = new_prompt
+                self.payload['negative_prompt'] = new_negative
+
+                # Regenerate the image using the updated payload
+                image_data = await self.bot.get_cog('Text2Image').txt2image(self.payload)
+                image_file = await self.bot.get_cog('Text2Image').pull_image(image_data)
+
+                buttons = self.bot.get_cog('Buttons').ImageView(interaction, image_data['images'], self.payload)
+
+                # Create the embed
+                embed = await self.bot.get_cog('Commands').create_embed(interaction, self.payload['prompt'], self.payload['negative_prompt'], 
+                                                                        self.payload['steps'], self.payload['seed'], self.payload['cfg_scale'])
+                # Update the message with the new image
+                await interaction.channel.send(embed=embed, file=image_file, view=buttons)
+
+                # Close the modal
+                await self.stop()
+
+
+
 
     @commands.Cog.listener()
     async def on_interaction(self, interaction: Interaction):
@@ -142,10 +180,15 @@ class Buttons(commands.Cog):
                     await interaction.response.channel.send("Embed deleted", ephemeral=True)
 
 
-                case "edit_prompt":
-                    await self.edit_prompt(interaction)
+                case "edit":
+                    # Create the modal and open it
+                    modal = self.EditModal(self.payload)
+                    await interaction.response.show_modal(modal)
 
 
+                case "ai_prompt":
+                    # Create modal 
+                    return
                     
 
 
