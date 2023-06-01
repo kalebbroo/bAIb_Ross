@@ -1,8 +1,8 @@
 import os
 import discord
 from discord.ext import commands
-from discord import ButtonStyle, Interaction
-from discord.ui import Button, View, Select, Modal, TextInput, ActionRow
+from discord import ButtonStyle, Interaction, ui
+from discord.ui import Button, View, Select, Modal, TextInput
 import asyncio
 
 
@@ -92,43 +92,59 @@ class Buttons(commands.Cog):
 
 
     class EditModal(Modal):
-        def __init__(self, payload):
+        def __init__(self, bot, payload):
             super().__init__(title="Edit Prompt")
+            self.bot = bot
             self.payload = payload
 
+
             # Add a TextInput for the prompt
-            self.add_item(TextInput(placeholder="Enter the new prompt", custom_id="new_prompt", value=self.payload['prompt']))
+            self.prompt = TextInput(label='Prompt',
+                                    style=discord.TextStyle.paragraph,
+                                    placeholder='Enter your prompt here',
+                                    min_length=1,
+                                    max_length=2000,
+                                    required=True)
+            self.negative_prompt = TextInput(label='Negative Prompt',
+                                            style=discord.TextStyle.paragraph,
+                                            placeholder='Enter your prompt here',
+                                            min_length=1,
+                                            max_length=2000,
+                                            required=True)
+            # Add the TextInput components to the modal
+            self.add_item(self.prompt)
+            self.add_item(self.negative_prompt)
 
-            # Add a TextInput for the negative prompt
-            self.add_item(TextInput(placeholder="Enter the new negative prompt", custom_id="new_negative", value=self.payload['negative_prompt']))
 
-            # Add a Button for submitting the changes
-            self.add_item(ActionRow(Button(style=ButtonStyle.primary, label="Submit", custom_id="submit_changes")))
 
-        async def callback(self, interaction: Interaction):
-            if interaction.data["custom_id"] == "submit_changes":
-                # Get the new values from the TextInput components
-                new_prompt = self.get_component("new_prompt").value
-                new_negative = self.get_component("new_negative").value
+        async def on_submit(self, interaction):
+            await interaction.response.defer()
 
-                # Update the payload with the new values
-                self.payload['prompt'] = new_prompt
-                self.payload['negative_prompt'] = new_negative
+            await interaction.channel.send("Generating images with new settings...")
 
-                # Regenerate the image using the updated payload
-                image_data = await self.bot.get_cog('Text2Image').txt2image(self.payload)
-                image_file = await self.bot.get_cog('Text2Image').pull_image(image_data)
+            # Get the new values from the TextInput components
+            new_prompt = self.prompt.value
+            new_negative = self.negative_prompt.value
 
-                buttons = self.bot.get_cog('Buttons').ImageView(interaction, image_data['images'], self.payload)
+            # Update the payload with the new values
+            self.payload['prompt'] = new_prompt
+            self.payload['negative_prompt'] = new_negative
 
-                # Create the embed
-                embed = await self.bot.get_cog('Commands').create_embed(interaction, self.payload['prompt'], self.payload['negative_prompt'], 
-                                                                        self.payload['steps'], self.payload['seed'], self.payload['cfg_scale'])
-                # Update the message with the new image
-                await interaction.channel.send(embed=embed, file=image_file, view=buttons)
+            # Regenerate the image using the updated payload
+            image_data = await self.bot.get_cog('Text2Image').txt2image(self.payload)
+            image_file = await self.bot.get_cog('Text2Image').pull_image(image_data)
 
-                # Close the modal
-                await self.stop()
+            buttons = self.bot.get_cog('Buttons').ImageView(interaction, image_data['images'], self.payload)
+
+            # Create the embed
+            embed = await self.bot.get_cog('Commands').create_embed(interaction, self.payload['prompt'], self.payload['negative_prompt'], 
+                                                                    self.payload['steps'], self.payload['seed'], self.payload['cfg_scale'])
+            # Update the message with the new image
+            await interaction.channel.send(embed=embed, file=image_file, view=buttons)
+
+            # Close the modal
+            self.stop()
+
 
 
 
@@ -182,8 +198,8 @@ class Buttons(commands.Cog):
 
                 case "edit":
                     # Create the modal and open it
-                    modal = self.EditModal(self.payload)
-                    await interaction.response.show_modal(modal)
+                    modal = self.EditModal(self.bot, self.payload)
+                    await interaction.response.send_modal(modal)
 
 
                 case "ai_prompt":

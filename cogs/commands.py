@@ -1,7 +1,6 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
-from baib_ross import showcase
 from config import SHOWCASE_ID
 import requests
 from typing import List

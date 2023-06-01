@@ -1,10 +1,7 @@
 import discord
 from discord.ext import commands
-from discord import app_commands
 from io import BytesIO
 import base64
-import requests
-import json
 from config import TOKEN
 import os
 
