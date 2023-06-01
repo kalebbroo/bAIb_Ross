@@ -128,8 +128,7 @@ class Image2Image(commands.Cog):
             "upscale_first": True
         }
 
-        # Send the request to the img2img API
-        #response = await self.img2img(payload)
+
         # Create a session and send the request to the API
         async with aiohttp.ClientSession() as session:
             async with session.post("http://localhost:7860/sdapi/v1/extra-single-image", json=payload) as response:

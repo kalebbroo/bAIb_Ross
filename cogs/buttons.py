@@ -3,7 +3,9 @@ import discord
 from discord.ext import commands
 from discord import ButtonStyle, Interaction, ui
 from discord.ui import Button, View, Select, Modal, TextInput
-import asyncio
+import base64
+from io import BytesIO
+from PIL import Image
 
 
 
@@ -48,21 +50,49 @@ class Buttons(commands.Cog):
             super().__init__(placeholder='Images are labeled 0-3 from left to right', options=options)
 
 
-        async def callback(self, interaction: Interaction):
+        async def callback(self, interaction):
             await interaction.response.defer()
             # Get the selected image file
             selected_image_file = self.values[0]
 
             # Generate more images from the selected image
-            generated_images = await self.bot.get_cog('Image2Image').generate_images(selected_image_file, interaction)
+            generated_images = await self.bot.get_cog('Image2Image').create_img2img(selected_image_file, interaction)
 
             # Create a new embed with a grid of images
-            embed = discord.Embed(title="Generated Images")
-            for i, image_path in enumerate(generated_images):
-                with open(image_path, 'rb') as f:
-                    file = discord.File(f, filename=f"image{i}.png")
-                    embed.set_image(url=f"attachment://image{i}.png")
-                    await interaction.channel.send(embed=embed, file=file)
+            embed = self.bot.get_cog('Commands').create_embed(self, interaction, prompt="", negative="", steps=60, seed=-1, cfg_scale=0.7, width=512, height=512)
+
+            # Decode each image and convert it to a PIL Image object
+            images = [Image.open(BytesIO(base64.b64decode(image_data))) for image_data in generated_images]
+
+            # Determine the grid size based on the number of images
+            grid_size = int(len(images) ** 0.5)
+
+            # Create a new image of the appropriate size to hold the grid
+            grid_image = Image.new('RGB', (grid_size * images[0].width, grid_size * images[0].height))
+
+            # Place each image into the grid and save each image individually
+            for i, image in enumerate(images):
+                row = i // grid_size
+                col = i % grid_size
+                grid_image.paste(image, (col * image.width, row * image.height))
+                folder_path = "image_cache/new_images"
+                if not os.path.exists(folder_path):
+                    os.makedirs(folder_path)
+                image_path = os.path.join(folder_path, f"new_images_{i}.png")
+                image.save(image_path)
+
+            # Save the grid image to a BytesIO object
+            image_file = BytesIO()
+            grid_image.save(image_file, format='PNG')
+            image_file.seek(0)
+
+            # Wrap the BytesIO object in a File object for sending via Discord
+            image_file = discord.File(image_file, filename="temp.png")
+
+
+            await interaction.channel.send(embed=embed, file=image_file)
+
+
 
     class UpscaleSelect(Select):
         def __init__(self, bot, image_files):
