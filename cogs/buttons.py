@@ -39,8 +39,9 @@ class Buttons(commands.Cog):
 
 
     class ImageSelect(Select):
-        def __init__(self, bot, image_files):
+        def __init__(self, bot, image_files, payload):
             self.bot = bot
+            self.payload = payload
             options = []
             for image_file in image_files:
                 # Create a SelectOption for each image file
@@ -52,17 +53,21 @@ class Buttons(commands.Cog):
 
         async def callback(self, interaction):
             await interaction.response.defer()
+            embed=discord.Embed(title=(f"Generating images from {self.values[0]}..."), color=0xff0000)
+            await interaction.channel.send(embed=embed)
             # Get the selected image file
             selected_image_file = self.values[0]
 
             # Generate more images from the selected image
-            generated_images = await self.bot.get_cog('Image2Image').create_img2img(selected_image_file, interaction)
+            generated_images = await self.bot.get_cog('Image2Image').create_img2img(selected_image_file, interaction, self.payload)
 
             # Create a new embed with a grid of images
-            embed = self.bot.get_cog('Commands').create_embed(self, interaction, prompt="", negative="", steps=60, seed=-1, cfg_scale=0.7, width=512, height=512)
+            embed = await self.bot.get_cog('Commands').create_embed(interaction, prompt="", negative="", steps=60, seed=-1, cfg_scale=0.7, width=512, height=512)
+        
 
             # Decode each image and convert it to a PIL Image object
-            images = [Image.open(BytesIO(base64.b64decode(image_data))) for image_data in generated_images]
+            images = [image_data for image_data in generated_images]
+
 
             # Determine the grid size based on the number of images
             grid_size = int(len(images) ** 0.5)
@@ -89,8 +94,8 @@ class Buttons(commands.Cog):
             # Wrap the BytesIO object in a File object for sending via Discord
             image_file = discord.File(image_file, filename="temp.png")
 
-
-            await interaction.channel.send(embed=embed, file=image_file)
+            buttons = self.bot.get_cog('Buttons').ImageView(interaction, image_file, self.payload)
+            await interaction.channel.send(embed=embed, file=image_file, view=buttons)
 
 
 
@@ -190,7 +195,7 @@ class Buttons(commands.Cog):
                 case "choose_img":
                     await interaction.response.defer()
                     image_files = [os.path.join("image_cache", image_file) for image_file in os.listdir("image_cache")]
-                    select_menu = self.ImageSelect(self.bot, image_files)
+                    select_menu = self.ImageSelect(self.bot, image_files, payload)
                     select_menu_view = self.SelectMenuView(select_menu)
                     await interaction.channel.send("Select an image to generate more from.", view=select_menu_view)
 
@@ -203,7 +208,6 @@ class Buttons(commands.Cog):
 
 
                 case "regenerate":
-                    #await self.bot.get_cog('Buttons').regenerate(interaction)
                     await interaction.response.defer()
                     await interaction.followup.send("Regenerating...")
                     # Regenerate the image using the stored payload
@@ -227,12 +231,14 @@ class Buttons(commands.Cog):
 
 
                 case "edit":
+                    await interaction.response.defer()
                     # Create the modal and open it
                     modal = self.EditModal(self.bot, self.payload)
                     await interaction.response.send_modal(modal)
 
 
                 case "ai_prompt":
+                    await interaction.response.defer()
                     # Create modal 
                     return
                     
