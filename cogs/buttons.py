@@ -239,8 +239,9 @@ class Buttons(commands.Cog):
 
                 case "ai_prompt":
                     await interaction.response.defer()
-                    # Create modal 
-                    return
+                    # Create the modal and open it
+                    modal = self.EditModal(self.bot, self.payload)
+                    await interaction.response.send_modal(modal)
                     
 
 

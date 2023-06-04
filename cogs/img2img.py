@@ -4,69 +4,21 @@ import os
 from io import BytesIO
 from PIL import Image
 from discord.ext import commands
+from payload import Payload
 
 class Image2Image(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @staticmethod
-    def create_payload(init_images=[], resize_mode=0, denoising_strength=0.75, image_cfg_scale=0, mask_blur=4,
-                       inpainting_fill=0, inpaint_full_res=True, inpaint_full_res_padding=0, inpainting_mask_invert=0,
-                       initial_noise_multiplier=0, prompt="", styles=[], seed=-1, subseed=-1, subseed_strength=0,
-                       seed_resize_from_h=-1, seed_resize_from_w=-1, sampler_name="DPM++ 2S a Karras", batch_size=4, n_iter=1,
-                       steps=60, cfg_scale=7, width=512, height=512, restore_faces=False, tiling=False,
-                       do_not_save_samples=False, do_not_save_grid=False, negative_prompt="", eta=0,
-                       s_min_uncond=0, s_churn=0, s_tmax=0, s_tmin=0, s_noise=1, override_settings={},
-                       override_settings_restore_afterwards=True, script_args=[], sampler_index="Euler",
-                       include_init_images=False, script_name="", send_images=True, save_images=False,
-                       alwayson_scripts={}):
-        return {
-                "init_images": init_images,
-                # "resize_mode": resize_mode,
-                 "denoising_strength": denoising_strength,
-                # "image_cfg_scale": image_cfg_scale,
-                #"mask": mask,
-                # "mask_blur": mask_blur,
-                # "inpainting_fill": inpainting_fill,
-                # "inpaint_full_res": inpaint_full_res,
-                # "inpaint_full_res_padding": inpaint_full_res_padding,
-                # "inpainting_mask_invert": inpainting_mask_invert,
-                # "initial_noise_multiplier": initial_noise_multiplier,
-                 "prompt": prompt,
-                # "styles": styles,
-                # "seed": seed,
-                # "subseed": subseed,
-                # "subseed_strength": subseed_strength,
-                # "seed_resize_from_h": seed_resize_from_h,
-                # "seed_resize_from_w": seed_resize_from_w,
-                "sampler_name": sampler_name,
-                "batch_size": batch_size,
-                # "n_iter": n_iter,
-                # "steps": steps,
-                # "cfg_scale": cfg_scale,
-                # "width": width,
-                # "height": height,
-                # "restore_faces": restore_faces,
-                # "tiling": tiling,
-                # "do_not_save_samples": do_not_save_samples,
-                # "do_not_save_grid": do_not_save_grid,
-                # "negative_prompt": negative_prompt,
-                # "eta": eta,
-                # "s_min_uncond": s_min_uncond,
-                # "s_churn": s_churn,
-                # "s_tmax": s_tmax,
-                # "s_tmin": s_tmin,
-                # "s_noise": s_noise,
-                # "override_settings": override_settings,
-                # "override_settings_restore_afterwards": override_settings_restore_afterwards,
-                # "script_args": script_args,
-                # "sampler_index": sampler_index,
-                # "include_init_images": include_init_images,
-                # "script_name": script_name,
-                # "send_images": send_images,
-                # "save_images": save_images,
-                # "alwayson_scripts": alwayson_scripts
-                }
+    async def img2img_payload(self, bot, interaction):
+        payload_instance = Payload(bot)
+        payload = await payload_instance.create_payload(prompt="Your prompt", negative_prompt="Your negative prompt")
+        return payload
+    
+    async def upscale_payload(self, bot, interaction):
+        payload_instance = Payload(bot)
+        payload = await payload_instance.create_payload(prompt="Your prompt", negative_prompt="Your negative prompt")
+        return payload
 
 
     @staticmethod
@@ -101,29 +53,8 @@ class Image2Image(commands.Cog):
             return None
 
 
-        # Build the request payload
-        """{
-            "resize_mode": 0,
-            "show_extras_results": true,
-            "gfpgan_visibility": 0,
-            "codeformer_visibility": 0,
-            "codeformer_weight": 0,
-            "upscaling_resize": 2,
-            "upscaling_resize_w": 512,
-            "upscaling_resize_h": 512,
-            "upscaling_crop": true,
-            "upscaler_1": "None",
-            "upscaler_2": "None",
-            "extras_upscaler_2_visibility": 0,
-            "upscale_first": false,
-            "image": ""
-            }"""
-        payload = {
-            "upscaling_resize": 4,
-            "upscaler_1": "R-ESRGAN 4x+",
-            "image": encoded_string,
-            "upscale_first": True
-        }
+        # Build the upscale payload
+        payload = await self.upscale_payload(self.bot, interaction)
 
         # Create a session and send the request to the API
         async with aiohttp.ClientSession() as session:

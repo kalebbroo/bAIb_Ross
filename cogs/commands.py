@@ -1,18 +1,18 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
+from discord.ui import Button, View, Select, Modal, TextInput
 from config import SHOWCASE_ID
 import requests
 from typing import List
 import asyncio
 import time
 import aiohttp
+from payload import Payload
 
 
-async def model_autocomplete(
-    interaction: discord.Interaction,
-    current: str,
-) -> List[app_commands.Choice[str]]:
+def model_autocomplete(
+            interaction, current: str = ""):
     # Make a GET request to the API to fetch the list of available models
     response = requests.get('http://localhost:7860/sdapi/v1/sd-models')
 
@@ -22,10 +22,7 @@ async def model_autocomplete(
         models = response.json()
 
         # Extract the model names and create a list of choices
-        return [
-            app_commands.Choice(name=model['model_name'], value=model['model_name'])
-            for model in models if current.lower() in model['model_name'].lower()
-        ]
+        return [model['model_name'] for model in models if current.lower() in model['model_name'].lower()]
     else:
         return []
 
@@ -39,53 +36,12 @@ class Commands(commands.Cog):
         self.eta_task = None
 
 
-    @commands.Cog.listener()
-    async def on_ready(self):
-        print("Bot is ready!")
+    @app_commands.command(name="dream", description="Press ENTER to Generate an image")
+    async def dream(self, interaction):
+        # Create the modal and open it
+        modal = self.Txt2imgModal(self.bot)
+        await interaction.response.send_modal(modal)
 
-
-        
-
-
-    @app_commands.command(name="dream", description="Generate an image using the Stable Diffusion API")
-    @app_commands.describe(prompt = "Enter the text prompt that you want the image to be generated from")
-    @app_commands.describe(negative = "Enter any negative prompts to avoid certain elements in the image")
-    @app_commands.autocomplete(model=model_autocomplete)
-    @app_commands.describe(steps = "Specify the number of steps for the diffusion process")
-    @app_commands.describe(seed = "Provide a seed for the random number generator to ensure reproducibility")
-    @app_commands.describe(sampler_name = "Choose the sampling method for the diffusion process")
-    @app_commands.describe(cfg_scale = "Specify the configuration scale for the model")
-    @app_commands.describe(face_restoration = "Choose whether to apply face restoration to the generated image")
-    @app_commands.describe(denoising_strength = "Specify the strength of denoising to be applied to the generated image")
-    async def dream(self, interaction: discord.Interaction, prompt: str = None, negative: str = "NSFW", model: str = None, steps: int = 10,
-                    seed: int = -1, sampler_name: str = "DPM++ 2S a Karras", cfg_scale: int = 7, face_restoration: bool = False, denoising_strength: float = 0.7):
-        await interaction.response.defer()
-        await interaction.followup.send(f"Creating image from prompt: {prompt}", ephemeral=True)
-
-        # Call the text2image function with the provided options
-        payload = self.bot.get_cog('Text2Image').create_payload(prompt, negative, steps, seed, cfg_scale, 512, 512, False,)
-
-        # Start the ETA task
-        self.eta_task = asyncio.ensure_future(self.update_eta(interaction))
-
-        image_data = await self.bot.get_cog('Text2Image').txt2image(payload)
-        image_file = await self.bot.get_cog('Text2Image').pull_image(image_data)
-        # Create an instance of the ImageView
-        buttons = self.bot.get_cog('Buttons').ImageView(interaction, image_data['images'], payload)
-        self.bot.get_cog('Buttons').payload = payload
-
-        embed = await self.create_embed(interaction, prompt, negative, steps, seed, cfg_scale)
-        await interaction.channel.send(embed=embed, file=image_file, view=buttons)
-
-        # Store the payload in the Buttons cog
-        self.bot.get_cog('Buttons').payload = payload
-
-        print(f"{interaction.user.display_name} Dreampt of {prompt}")
-
-        # Cancel the ETA task
-        if self.eta_task and not self.eta_task.done():
-            self.eta_task.cancel()
-            self.eta_task = None
 
     async def update_eta(self, interaction):
         start_time = time.time()
@@ -118,6 +74,133 @@ class Commands(commands.Cog):
         embed.set_author(name=user.name, icon_url=user.avatar.url)
 
         return embed
+    
+
+    class Txt2imgModal(Modal):
+        def __init__(self, bot):
+            super().__init__(title="Enter Prompt and change settings")
+            self.bot = bot
+            self.eta_task = None
+
+            model = model_autocomplete(self)
+            # Add a TextInput for the prompt
+
+            # Make the prompt and negative prompt into 1 text input and have code to split the text  by the word "prompt:<> negative:<>"
+            self.prompt = TextInput(label='Format must be [Prompt: Negative:]',
+                                    style=discord.TextStyle.paragraph,
+                                    default='Prompt:A happy little tree Negative:nsfw',
+                                    min_length=1,
+                                    max_length=2000,
+                                    required=True)
+            self.model = TextInput(label='Choose 1 Model',
+                                            style=discord.TextStyle.paragraph,
+                                            #placeholder=f'{model}',
+                                            default=f'{model}',
+                                            min_length=1,
+                                            max_length=2000,
+                                            required=False)
+            self.settings = TextInput(label='Enter values to change settings',
+                                            style=discord.TextStyle.paragraph,
+                                            placeholder='Enter your settings here',
+                                            default="Steps: 10, Seed: -1, CFG Scale: 0.9, Width: 512, Height: 512",
+                                            min_length=1,
+                                            max_length=2000,
+                                            required=False)
+            self.styles = TextInput(label='Choose Styles and VAE',
+                                            style=discord.TextStyle.short,
+                                            placeholder='Choose Styles LORA VAE',
+                                            default="pre filled out text",
+                                            min_length=1,
+                                            max_length=2000,
+                                            required=False)
+            self.upscale = TextInput(label='Upscale Options',
+                                            style=discord.TextStyle.short,
+                                            placeholder='Enter your prompt here',
+                                            default="pre filled out text",
+                                            min_length=1,
+                                            max_length=2000,
+                                            required=False)
+            # Add the TextInput components to the modal
+            self.add_item(self.prompt)
+            self.add_item(self.styles)
+            self.add_item(self.model)
+            self.add_item(self.settings)
+            self.add_item(self.upscale)
+
+        async def on_submit(self, interaction):
+            await interaction.response.defer()
+
+            prompt = self.prompt.value
+            await interaction.followup.send(f"Creating image from prompt: {prompt}", ephemeral=True)
+
+            styles = self.styles.value
+            model = self.model.value
+            settings = self.settings.value
+            upscale = self.upscale.value
+
+            prompt, negative, steps, seed, cfg_scale = await self.sort_modal_response(interaction, prompt, styles, 
+                                                                          model, settings, upscale)
+
+            # Create an instance of the Payload class
+            payload_instance = Payload(self.bot)
+
+            # Create the payload
+            payload = await payload_instance.create_payload(prompt, negative, steps, seed, cfg_scale)
+
+            # Call the text2image function with the created payload
+            response_data, payload = await self.bot.get_cog('Text2Image').txt2image(payload)
+
+            # Start the ETA task
+            self.eta_task = asyncio.ensure_future(self.bot.get_cog('Commands').update_eta(interaction))
+
+            image_file = await self.bot.get_cog('Text2Image').pull_image(response_data)
+            # Create an instance of the ImageView
+            buttons = self.bot.get_cog('Buttons').ImageView(interaction, response_data['images'], payload)
+            self.bot.get_cog('Buttons').payload = payload
+
+            embed = await self.bot.get_cog('Commands').create_embed(interaction, prompt, negative, steps, seed, cfg_scale)
+            await interaction.channel.send(embed=embed, file=image_file, view=buttons)
+
+            # Store the payload in the Buttons cog
+            self.bot.get_cog('Buttons').payload = payload
+
+            print(f"{interaction.user.display_name} Dreampt of {prompt}")
+
+            # Cancel the ETA task
+            if self.eta_task and not self.eta_task.done():
+                self.eta_task.cancel()
+                self.eta_task = None
+
+        async def sort_modal_response(self, interaction, prompt, styles, model, settings, upscale):
+            # Split prompt and negative from modal text
+            parts = prompt.split("Negative:")
+            prompt = parts[0].replace("Prompt:", "").strip()
+            negative = parts[1].strip() if len(parts) > 1 else None
+
+            # split styles
+            #Todo: make the logic
+            styles = styles
+
+            # Make sure there is only 1 model
+            #Todo: make the logic 
+            model = model
+
+            # split the settings and check for valid values
+            settings = settings
+            cfg_scale = 0.7
+            seed = -1
+            steps = 10
+
+            # create upscale logic
+            upscale = upscale
+
+            return prompt, negative, steps, seed, cfg_scale, 
+            
+
+
+
+
+
 
 
 async def get_eta():
