@@ -11,8 +11,7 @@ import aiohttp
 from payload import Payload
 
 
-def model_autocomplete(
-            interaction, current: str = ""):
+async def model_autocomplete(current: str = ""):
     # Make a GET request to the API to fetch the list of available models
     response = requests.get('http://localhost:7860/sdapi/v1/sd-models')
 
@@ -22,9 +21,14 @@ def model_autocomplete(
         models = response.json()
 
         # Extract the model names and create a list of choices
-        return [model['model_name'] for model in models if current.lower() in model['model_name'].lower()]
+        model_list = [model['model_name'] for model in models if current.lower() in model['model_name'].lower()]
+        # Create a formatted string with each model on a new line, preceded by its number
+        formatted_list = "\n".join(f"{i+1}. {model}" for i, model in enumerate(model_list))
+        return formatted_list
+
+
     else:
-        return []
+        return ""
 
 
 
@@ -38,8 +42,11 @@ class Commands(commands.Cog):
 
     @app_commands.command(name="dream", description="Press ENTER to Generate an image")
     async def dream(self, interaction):
+        #await interaction.followup.send(f"Generating Prompt Creator...", ephemeral=True)
         # Create the modal and open it
-        modal = self.Txt2imgModal(self.bot)
+        current = ""
+        formatted_list = await model_autocomplete(current)
+        modal = self.Txt2imgModal(self.bot, formatted_list)
         await interaction.response.send_modal(modal)
 
 
@@ -77,25 +84,23 @@ class Commands(commands.Cog):
     
 
     class Txt2imgModal(Modal):
-        def __init__(self, bot):
+        def __init__(self, bot, formatted_list):
             super().__init__(title="Enter Prompt and change settings")
             self.bot = bot
+            self.formatted_list = formatted_list
             self.eta_task = None
 
-            model = model_autocomplete(self)
             # Add a TextInput for the prompt
-
-            # Make the prompt and negative prompt into 1 text input and have code to split the text  by the word "prompt:<> negative:<>"
             self.prompt = TextInput(label='Format must be [Prompt: Negative:]',
                                     style=discord.TextStyle.paragraph,
-                                    default='Prompt:A happy little tree Negative:nsfw',
+                                    default='Prompt: A happy little tree Negative: nsfw',
                                     min_length=1,
                                     max_length=2000,
                                     required=True)
-            self.model = TextInput(label='Choose 1 Model',
+            self.model = TextInput(label='Choose 1 Model, delete the rest',
                                             style=discord.TextStyle.paragraph,
                                             #placeholder=f'{model}',
-                                            default=f'{model}',
+                                            default=f'{formatted_list}',
                                             min_length=1,
                                             max_length=2000,
                                             required=False)
@@ -107,15 +112,8 @@ class Commands(commands.Cog):
                                             max_length=2000,
                                             required=False)
             self.styles = TextInput(label='Choose Styles and VAE',
-                                            style=discord.TextStyle.short,
+                                            style=discord.TextStyle.paragraph,
                                             placeholder='Choose Styles LORA VAE',
-                                            default="pre filled out text",
-                                            min_length=1,
-                                            max_length=2000,
-                                            required=False)
-            self.upscale = TextInput(label='Upscale Options',
-                                            style=discord.TextStyle.short,
-                                            placeholder='Enter your prompt here',
                                             default="pre filled out text",
                                             min_length=1,
                                             max_length=2000,
@@ -125,7 +123,6 @@ class Commands(commands.Cog):
             self.add_item(self.styles)
             self.add_item(self.model)
             self.add_item(self.settings)
-            self.add_item(self.upscale)
 
         async def on_submit(self, interaction):
             await interaction.response.defer()
@@ -136,10 +133,9 @@ class Commands(commands.Cog):
             styles = self.styles.value
             model = self.model.value
             settings = self.settings.value
-            upscale = self.upscale.value
 
-            prompt, negative, steps, seed, cfg_scale = await self.sort_modal_response(interaction, prompt, styles, 
-                                                                          model, settings, upscale)
+            prompt, negative, model, steps, seed, cfg_scale = await self.sort_modal_response(interaction, prompt, styles, 
+                                                                          model, settings)
 
             # Create an instance of the Payload class
             payload_instance = Payload(self.bot)
@@ -171,7 +167,7 @@ class Commands(commands.Cog):
                 self.eta_task.cancel()
                 self.eta_task = None
 
-        async def sort_modal_response(self, interaction, prompt, styles, model, settings, upscale):
+        async def sort_modal_response(self, interaction, prompt, styles, model, settings):
             # Split prompt and negative from modal text
             parts = prompt.split("Negative:")
             prompt = parts[0].replace("Prompt:", "").strip()
@@ -183,7 +179,12 @@ class Commands(commands.Cog):
 
             # Make sure there is only 1 model
             #Todo: make the logic 
-            model = model
+            models = await model_autocomplete("")
+            for item in models:
+                if item == model:
+                    pass
+                else:
+                    model = "disneyPixarCartoon_v10"
 
             # split the settings and check for valid values
             settings = settings
@@ -191,10 +192,7 @@ class Commands(commands.Cog):
             seed = -1
             steps = 10
 
-            # create upscale logic
-            upscale = upscale
-
-            return prompt, negative, steps, seed, cfg_scale, 
+            return prompt, negative, model, steps, seed, cfg_scale,
             
 
 
