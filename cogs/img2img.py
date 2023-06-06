@@ -10,14 +10,16 @@ class Image2Image(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    async def img2img_payload(self, bot, interaction):
+    async def img2img_payload(self, bot, interaction, init_images, prompt):
         payload_instance = Payload(bot)
-        payload = await payload_instance.create_payload(prompt="Your prompt", negative_prompt="Your negative prompt")
+        payload = await payload_instance.create_payload(prompt=prompt, negative_prompt="Your negative prompt", init_images=init_images)
         return payload
+
+
     
-    async def upscale_payload(self, bot, interaction):
+    async def upscale_payload(self, bot, interaction, encoded_string):
         payload_instance = Payload(bot)
-        payload = await payload_instance.create_payload(prompt="Your prompt", negative_prompt="Your negative prompt")
+        payload = await payload_instance.create_payload(prompt="Your prompt", negative_prompt="nsfw", encoded_string=encoded_string)
         return payload
 
 
@@ -54,12 +56,14 @@ class Image2Image(commands.Cog):
 
 
         # Build the upscale payload
-        payload = await self.upscale_payload(self.bot, interaction)
+        payload = await self.upscale_payload(self.bot, interaction, encoded_string)
+
 
         # Create a session and send the request to the API
         async with aiohttp.ClientSession() as session:
             async with session.post("http://localhost:7860/sdapi/v1/extra-single-image", json=payload) as response:
                 response_json = await response.json()
+                #print(f"Response JSON: {response_json}")
             with open('response.txt', 'w') as file:
                 file.write(str(response_json))
             
@@ -81,7 +85,7 @@ class Image2Image(commands.Cog):
 
             return upscaled_image_path
         else:
-            await interaction.response.send_message("Failed to upscale the image.", ephemeral=True)
+            await interaction.followup.send("Failed to upscale the image.", ephemeral=True)
             return None
         
     async def create_img2img(self, image_path, interaction, payload):
@@ -93,12 +97,14 @@ class Image2Image(commands.Cog):
 
         # Create the payload for the API request
         prompt = payload['prompt']
-        payload = self.create_payload(init_images=[encoded_string], prompt=prompt)
+        new_payload = await self.img2img_payload(self.bot, interaction, [encoded_string], prompt)
+
+
         #print(f"img2img Payload: {payload}")
 
         # Make the API request
         async with aiohttp.ClientSession() as session:
-            async with session.post('http://localhost:7860/sdapi/v1/img2img', json=payload) as response:
+            async with session.post('http://localhost:7860/sdapi/v1/img2img', json=new_payload) as response:
                 if response.status == 200:
                     # Decode the response and save the upscaled image
                     response_data = await response.json()

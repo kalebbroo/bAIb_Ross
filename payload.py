@@ -18,7 +18,7 @@ class Payload:
                             styles: Optional[str] = None,
                             extra_net: Optional[str] = None, facefix: Optional[bool] = None,
                             highres_fix: Optional[bool] = None, clip_skip: Optional[int] = None,
-                            strength: Optional[float] = None, init_image: Optional[discord.Attachment] = None,
+                            strength: Optional[float] = None, init_images: Optional[discord.Attachment] = None,
                             batch: Optional[int] = None, encoded_string: Optional[str] = None):
         # Define the base payload
         safe_negative = "nsfw, explicit, lowres, bad anatomy, bad hands, text, error, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blurry"
@@ -30,7 +30,7 @@ class Payload:
             "negative_prompt": negative_prompt,
             "steps": 10,
             "seed": -1,
-            "cfg_scale": 0.7,
+            "cfg_scale": 7,
             "sampler_name": "DPM++ 2S a Karras",
         }
 
@@ -41,13 +41,13 @@ class Payload:
             "enable_hr": highres_fix,
             "restore_faces": facefix,
             "batch_size": 4,
-            "model_name": model_name
+            "model_name": None
         }
 
         img2img_payload = {
-            "init_images": init_image,
+            "init_images": init_images,
             "denoising_strength": strength,
-            "batch_size": batch,
+            "batch_size": 4,
             "width": 512,
             "height": 512,
         }
@@ -64,7 +64,7 @@ class Payload:
         if model_name is not None:
             payload.update(text2img_payload)
 
-        elif init_image is not None:
+        elif init_images is not None:
             payload.update(img2img_payload)
 
         elif encoded_string is not None:
