@@ -16,30 +16,36 @@ class AIPromptGenerator(commands.Cog):
 
     @app_commands.command(name="ai_prompt_generator", description="Utilizes AI to generate a better prompt")
     async def ai_prompt_generator(self, interaction):
-        await interaction.response.defer()
         # Get the payload
         payload_instance = Payload(self.bot)
         payload = await payload_instance.create_payload(prompt="Your prompt", negative_prompt="Your negative prompt")
 
 
         # Create the modal and open it
-        modal = self.bot.get_cog('AIPromptGenerator').GPTModal(self.bot)
+        modal = self.bot.get_cog('AIPromptGenerator').GPTModal(self.bot, payload)
         await interaction.response.send_modal(modal)
 
 
     async def rewrite_prompt(self, interaction, original_prompt: str):
         pre_prompt = "You are an expert prompt creator for making prompts for Stable Diffusion to create amazing images. Rewrite this prompt to make the best quality image possible for what I'm looking for. Make sure to create a detailed and long prompt so it will correctly generate the image I want."
-        full_prompt = f"{pre_prompt}\n\nOriginal Prompt: {original_prompt}"
 
-        response = self.openai.complete(
+        response = self.openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
-            prompt=full_prompt,
+            messages=[
+                {"role": "system", "content": pre_prompt},
+                {"role": "user", "content": original_prompt},
+            ],
             max_tokens=100,
             temperature=0.7,
         )
 
-        rewritten_prompt = response.choices[0].text.strip()
+        print(response)  # Add this line to print the response object
+
+        rewritten_prompt = response['choices'][0]['message']['content'].strip()
         await interaction.channel.send(f"Rewritten Prompt: {rewritten_prompt}")
+
+
+
 
     class GPTModal(Modal):
         def __init__(self, bot, payload):
@@ -85,7 +91,7 @@ class AIPromptGenerator(commands.Cog):
             self.payload['prompt'] = better_prompt
 
             # Regenerate the image using the updated payload
-            image_data = await self.bot.get_cog('Text2Image').txt2image(self.payload)
+            image_data, _ = await self.bot.get_cog('Text2Image').txt2image(self.payload)
             image_file = await self.bot.get_cog('Text2Image').pull_image(image_data)
 
             buttons = self.bot.get_cog('Buttons').ImageView(interaction, image_data['images'], self.payload)
@@ -101,3 +107,5 @@ class AIPromptGenerator(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(AIPromptGenerator(bot))
+
+    #TODO: fix payload getting sent to the API from Modal submit. fix response from AI

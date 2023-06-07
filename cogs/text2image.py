@@ -26,7 +26,7 @@ class Text2Image(commands.Cog):
         url = "http://localhost:7860/sdapi/v1/txt2img"
         headers = {"Content-Type": "application/json"}
 
-        print(f"Payload: {payload}")
+        #print(f"Payload: {payload}")
 
         async with aiohttp.ClientSession() as session:
             async with session.post(url, headers=headers, json=payload) as response:

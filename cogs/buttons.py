@@ -59,10 +59,12 @@ class Buttons(commands.Cog):
             selected_image_file = self.values[0]
 
             # Generate more images from the selected image
+            print(f"Payload before create_img2img: {self.payload}")
             generated_images = await self.bot.get_cog('Image2Image').create_img2img(selected_image_file, interaction, self.payload)
 
             # Create a new embed with a grid of images
-            embed = await self.bot.get_cog('Commands').create_embed(interaction, prompt="", negative="", steps=60, seed=-1, cfg_scale=0.7, width=512, height=512)
+            embed = await self.bot.get_cog('Commands').create_embed(interaction, prompt="", negative="", 
+                                                                    steps=60, seed=-1, cfg_scale=7, width=512, height=512)
         
 
             # Decode each image and convert it to a PIL Image object
@@ -166,10 +168,11 @@ class Buttons(commands.Cog):
             self.payload['negative_prompt'] = new_negative
 
             # Regenerate the image using the updated payload
-            image_data = await self.bot.get_cog('Text2Image').txt2image(self.payload)
-            image_file = await self.bot.get_cog('Text2Image').pull_image(image_data)
+            response_data, payload = await self.bot.get_cog('Text2Image').txt2image(self.payload)
+            image_file = await self.bot.get_cog('Text2Image').pull_image(response_data)
 
-            buttons = self.bot.get_cog('Buttons').ImageView(interaction, image_data['images'], self.payload)
+
+            buttons = self.bot.get_cog('Buttons').ImageView(interaction, response_data['images'], self.payload)
 
             # Create the embed
             embed = await self.bot.get_cog('Commands').create_embed(interaction, self.payload['prompt'], self.payload['negative_prompt'], 
@@ -189,7 +192,9 @@ class Buttons(commands.Cog):
         if interaction.type == discord.InteractionType.component:
             button_id = interaction.data["custom_id"]
             payload = self.bot.get_cog('Buttons').payload
+            print(f"Payload before update: {self.payload}")
             self.payload = payload
+            print(f"Payload after update: {self.payload}")
 
             match button_id:
                 case "choose_img":
@@ -211,16 +216,18 @@ class Buttons(commands.Cog):
                     await interaction.response.defer()
                     await interaction.followup.send("Regenerating...")
                     # Regenerate the image using the stored payload
-                    image_data = await self.bot.get_cog('Text2Image').txt2image(self.payload)
-                    image_file = await self.bot.get_cog('Text2Image').pull_image(image_data)
 
-                    buttons = self.bot.get_cog('Buttons').ImageView(interaction, image_data['images'], self.payload)
+                    response_data, payload = await self.bot.get_cog('Text2Image').txt2image(self.payload)
+                    image_file = await self.bot.get_cog('Text2Image').pull_image(response_data)
+
+                    buttons = self.bot.get_cog('Buttons').ImageView(interaction, response_data['images'], self.payload)
 
                     # Create the embed
                     embed = await self.bot.get_cog('Commands').create_embed(interaction, self.payload['prompt'], self.payload['negative_prompt'], 
                                                                             self.payload['steps'], self.payload['seed'], self.payload['cfg_scale'])
                     # Update the message with the new image
                     await interaction.channel.send(embed=embed, file=image_file, view=buttons)
+
 
 
                 case "delete":
@@ -231,14 +238,12 @@ class Buttons(commands.Cog):
 
 
                 case "edit":
-                    await interaction.response.defer()
                     # Create the modal and open it
                     modal = self.EditModal(self.bot, self.payload)
                     await interaction.response.send_modal(modal)
 
 
                 case "ai_prompt":
-                    await interaction.response.defer()
                     # Create the modal and open it
                     modal = self.EditModal(self.bot, self.payload)
                     await interaction.response.send_modal(modal)
