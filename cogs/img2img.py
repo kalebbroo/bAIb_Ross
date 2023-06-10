@@ -12,6 +12,8 @@ class Image2Image(commands.Cog):
 
     async def img2img_payload(self, bot, interaction, init_images, prompt):
         payload_instance = Payload(bot)
+        if prompt is None:
+            prompt = 'perfect quality'
         payload = await payload_instance.create_payload(prompt=prompt, negative_prompt="Your negative prompt", init_images=init_images)
         return payload
 
