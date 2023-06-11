@@ -188,13 +188,18 @@ class Buttons(commands.Cog):
 
 
     @commands.Cog.listener()
-    async def on_interaction(self, interaction: Interaction):
+    async def on_interaction(self, interaction):
         if interaction.type == discord.InteractionType.component:
             button_id = interaction.data["custom_id"]
-            payload = self.bot.get_cog('Buttons').payload
-            print(f"Payload before update: {self.payload}")
+            #payload = self.bot.get_cog('Buttons').payload
+            # Store the payload
+            payload = interaction.client.payloads.get(str(interaction.user.id))
             self.payload = payload
-            print(f"Payload after update: {self.payload}")
+            # Retrieve the payload
+
+            #print(f"Payload before update: {self.payload}")
+            #self.payload = payload
+            #print(f"Payload after update: {self.payload}")
 
             match button_id:
                 case "choose_img":
@@ -216,7 +221,7 @@ class Buttons(commands.Cog):
                     await interaction.response.defer()
                     await interaction.followup.send("Regenerating...")
                     # Regenerate the image using the stored payload
-
+                    print(f"Payload before regeneration: {self.payload}")
                     response_data, payload = await self.bot.get_cog('Text2Image').txt2image(self.payload)
                     image_file = await self.bot.get_cog('Text2Image').pull_image(response_data)
 
@@ -245,7 +250,7 @@ class Buttons(commands.Cog):
 
                 case "ai_prompt":
                     # Create the modal and open it
-                    modal = self.EditModal(self.bot, self.payload)
+                    modal = self.bot.get_cog('AIPromptGenerator').GPTModal(self.bot)
                     await interaction.response.send_modal(modal)
                     
 
