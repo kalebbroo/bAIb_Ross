@@ -13,13 +13,13 @@ class Payload:
 
     # Create the payload
     async def create_payload(self, prompt: str, negative_prompt: Optional[str] = None,
-                            model_name: Optional[str] = None,
+                            model: Optional[str] = None, steps: Optional[int] = None,
                             guidance_scale: Optional[str] = None, sampler: Optional[str] = None,
-                            styles: Optional[str] = None,
+                            styles: Optional[str] = None, seed: Optional[int] = None, cfg_scale: Optional[int] = None,
                             extra_net: Optional[str] = None, facefix: Optional[bool] = None,
                             highres_fix: Optional[bool] = None, clip_skip: Optional[int] = None,
                             strength: Optional[float] = None, init_images: Optional[discord.Attachment] = None,
-                            batch: Optional[int] = None, encoded_string: Optional[str] = None):
+                            batch_size: Optional[int] = None, encoded_string: Optional[str] = None):
         # Define the base payload
         safe_negative = "nsfw, explicit, lowres, bad anatomy, bad hands, text, error, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blurry"
         if negative_prompt is None or negative_prompt.lower() == "nsfw":
@@ -28,9 +28,9 @@ class Payload:
         base_payload = {
             "prompt": prompt,
             "negative_prompt": negative_prompt,
-            "steps": 10,
-            "seed": -1,
-            "cfg_scale": 7,
+            "steps": steps if steps is not None else 10,
+            "seed": seed if seed is not None else -1,
+            "cfg_scale": cfg_scale if cfg_scale is not None else 7,
             "sampler_name": "DPM++ 2S a Karras",
         }
 
@@ -40,8 +40,8 @@ class Payload:
             "height": 512,
             "enable_hr": highres_fix,
             "restore_faces": facefix,
-            "batch_size": 4,
-            "model_name": None
+            "batch_size": batch_size if batch_size is not None else 4,
+            "model": None
         }
 
         img2img_payload = {
@@ -61,7 +61,7 @@ class Payload:
         payload = base_payload.copy()  # Create a copy of the base payload
 
         # Update the payload with the additional payloads
-        if model_name is not None:
+        if model is not None:
             payload.update(text2img_payload)
 
         elif init_images is not None:
