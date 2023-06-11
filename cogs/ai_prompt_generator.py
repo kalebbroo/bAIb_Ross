@@ -17,16 +17,19 @@ class AIPromptGenerator(commands.Cog):
     @app_commands.command(name="ai_prompt_generator", description="Utilizes AI to generate a better prompt")
     async def ai_prompt_generator(self, interaction):
         # Get the payload
-        payload_instance = Payload(self.bot)
-        payload = await payload_instance.create_payload(prompt="Your prompt", negative_prompt="Your negative prompt")
+        # payload_instance = Payload(self.bot)
+        # payload = await payload_instance.create_payload(prompt="Your prompt", negative_prompt="Your negative prompt")
 
 
         # Create the modal and open it
-        modal = self.bot.get_cog('AIPromptGenerator').GPTModal(self.bot, payload)
+        #model_list = self.bot.model_list
+        #print(f'model list: {model_list}')
+        modal = self.bot.get_cog('AIPromptGenerator').GPTModal(self.bot)
         await interaction.response.send_modal(modal)
 
 
-    async def rewrite_prompt(self, interaction, original_prompt: str):
+    async def rewrite_prompt(self, interaction, prompt):
+        prompt = ''.join(prompt)
         with open('pre_prompt.txt', 'r', encoding='utf-8') as file:
             pre_prompt = file.read()
 
@@ -35,26 +38,28 @@ class AIPromptGenerator(commands.Cog):
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": pre_prompt},
-                {"role": "user", "content": original_prompt},
+                {"role": "user", "content": prompt},
             ],
             max_tokens=500,
             temperature=0.7,
         )
 
-        rewritten_prompt = response['choices'][0]['message']['content'].strip()
-        await interaction.channel.send(f"Rewritten Prompt: {rewritten_prompt}")
-        return rewritten_prompt
+        prompt = response['choices'][0]['message']['content'].strip()
+        prompt_parts = prompt.split("Negative:")
+        prompt = prompt_parts[0].strip()
+        negative = prompt_parts[1].strip()
+        await interaction.channel.send(f"Rewritten Prompt: {prompt}")
+        return prompt, negative
 
 
 
 
     class GPTModal(Modal):
-        def __init__(self, bot, payload):
+        def __init__(self, bot):
             super().__init__(title="Have AI Generate a Better Prompt")
             self.bot = bot
-            self.payload = payload
 
-
+            model_list = self.bot.model_list
             # Add a TextInput for the prompt
             self.prompt = TextInput(label='Format must be [Prompt: Negative:]',
                                     style=discord.TextStyle.paragraph,
@@ -62,17 +67,17 @@ class AIPromptGenerator(commands.Cog):
                                     min_length=1,
                                     max_length=2000,
                                     required=True)
-            self.model = TextInput(label='Choose 1 Model, delete the rest',
+            self.model = TextInput(label='Choose 1 Model. Format must be 1. model_name',
                                             style=discord.TextStyle.paragraph,
-                                            #placeholder=f'{model}',
-                                            default='formatted_list',
+                                            #placeholder=f'{model_list}',
+                                            default=(model_list),
                                             min_length=1,
                                             max_length=2000,
                                             required=False)
             self.settings = TextInput(label='Enter values to change settings',
                                             style=discord.TextStyle.paragraph,
-                                            placeholder='Enter your settings here',
-                                            default="Steps: 10, Seed: -1, CFG Scale: 0.9, Width: 512, Height: 512",
+                                            placeholder='Change your settings here',
+                                            default="[Steps]: 10, [Seed]: -1, [CFG Scale]: 7.0, [Width]: 512, [Height]: 512",
                                             min_length=1,
                                             max_length=2000,
                                             required=False)
@@ -92,33 +97,42 @@ class AIPromptGenerator(commands.Cog):
         async def on_submit(self, interaction):
             await interaction.response.defer()
 
-            await interaction.channel.send("Generating images with new settings...")
+            await interaction.channel.send("Bots are currently speaking with other bots to generate your prompt... Please wait...")
 
             # Get the new values from the TextInput components
-            new_prompt = self.prompt.value
+            prompt = self.prompt.value
+            styles = self.styles.value
+            model = self.model.value
+            settings = self.settings.value
             #new_negative = self.negative_prompt.value
 
             # Update the payload with the new values
-            self.payload['prompt'] = new_prompt
+            #self.payload['prompt'] = new_prompt
             #self.payload['negative_prompt'] = new_negative
 
-            # Send the new prompt and negative prompt to the Chat GPT API
-            rewritten_prompt = await self.bot.get_cog('AIPromptGenerator').rewrite_prompt(interaction, new_prompt)
+            prompt, model, steps, seed, cfg_scale, batch_size = await self.bot.get_cog('ParseModal').parse_modal(interaction, prompt, styles, model, settings)
 
+            # Send the new prompt and negative prompt to the Chat GPT API
+            prompt, negative = await self.bot.get_cog('AIPromptGenerator').rewrite_prompt(interaction, prompt)
+
+            payload = {'prompt': prompt, 'negative_prompt': negative, 'model': model, 'steps': steps, 
+                       'seed': seed, 'cfg_scale': cfg_scale, 'batch_size': batch_size}
+            interaction.client.payloads[str(interaction.user.id)] = payload
             # Update the payload with the better prompt
-            self.payload['prompt'] = rewritten_prompt
-            self.payload['batch_size'] = 4
+            #self.payload['prompt'] = rewritten_prompt
+            #self.payload['batch_size'] = 4
 
             # Regenerate the image using the updated payload
-            #print (self.payload)
-            response_data, payload = await self.bot.get_cog('Text2Image').txt2image(self.payload)
+            #print (f"payload after AI: {payload}")
+            response_data, payload = await self.bot.get_cog('Text2Image').txt2image(payload)
             image_file = await self.bot.get_cog('Text2Image').pull_image(response_data)
+            print (f"payload after txt2img: {payload}")
 
-            buttons = self.bot.get_cog('Buttons').ImageView(interaction, response_data['images'], self.payload)
+            buttons = self.bot.get_cog('Buttons').ImageView(interaction, response_data['images'], payload)
 
             # Create the embed
-            embed = await self.bot.get_cog('Commands').create_embed(interaction, self.payload['prompt'], self.payload['negative_prompt'], 
-                                                                    self.payload['steps'], self.payload['seed'], self.payload['cfg_scale'])
+            embed = await self.bot.get_cog('Commands').create_embed(interaction, payload['prompt'], payload['negative_prompt'], 
+                                                                    payload['steps'], payload['seed'], payload['cfg_scale'])
             # Update the message with the new image
             await interaction.channel.send(embed=embed, file=image_file, view=buttons)
 
@@ -127,5 +141,3 @@ class AIPromptGenerator(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(AIPromptGenerator(bot))
-
-    #TODO: fix payload getting sent to the API from Modal submit. fix response from AI
