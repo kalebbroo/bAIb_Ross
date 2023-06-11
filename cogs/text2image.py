@@ -15,10 +15,13 @@ class Text2Image(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    async def txt2img_payload(self, bot, prompt, negative_prompt):
+    async def txt2img_payload(self, bot, interaction, prompt, negative_prompt):
         payload_instance = Payload(bot)
         payload = await payload_instance.create_payload(prompt, negative_prompt)
         await self.text2image(payload)
+        interaction.client.payloads[str(interaction.user.id)] = payload
+
+        
     
 
     @staticmethod
