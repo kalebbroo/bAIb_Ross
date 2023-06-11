@@ -4,6 +4,7 @@ from io import BytesIO
 import base64
 from config import TOKEN
 import os
+import requests
 
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix='/', intents=intents)
@@ -39,6 +40,23 @@ async def load_extensions():
         if filename.endswith('.py'):
             await bot.load_extension(f'cogs.{filename[:-3]}')
 
+async def model_autocomplete(current: str = ""):
+    # Make a GET request to the API to fetch the list of available models
+    response = requests.get('http://localhost:7860/sdapi/v1/sd-models')
+
+    # Check if the request was successful
+    if response.status_code == 200:
+        # Parse the JSON response
+        models = response.json()
+
+        # Extract the model names and create a list of choices
+        model_list = [model['model_name'] for model in models if current.lower() in model['model_name'].lower()]
+        # Create a formatted string with each model on a new line, preceded by its number
+        formatted_list = "\n".join(f"{i+1}. {model}" for i, model in enumerate(model_list))
+        return formatted_list
+    else:
+        return ""
+
 @bot.event
 async def on_ready():
     print(f"Logged in as {bot.user.name}")
@@ -46,6 +64,9 @@ async def on_ready():
     fmt  = await bot.tree.sync()
     print(f"synced {len(fmt)} commands")
     print(f"Loaded: {len(bot.cogs)} cogs")
+    bot.model_list = await model_autocomplete()
+    bot.payloads = {}
+    #print(model_list)
 
 
 
