@@ -55,6 +55,7 @@ class Commands(commands.Cog):
         embed.set_image(url="attachment://temp.png")
         embed.set_footer(text=footer_text)
         embed.set_author(name=user.name, icon_url=user.avatar.url)
+        
 
         return embed
     
@@ -132,7 +133,7 @@ class Commands(commands.Cog):
             # Start the ETA task
             self.eta_task = asyncio.ensure_future(self.bot.get_cog('Commands').update_eta(interaction))
 
-            image_file = await self.bot.get_cog('Text2Image').pull_image(response_data)
+            image_file = await self.bot.get_cog('Text2Image').pull_image(response_data, interaction)
             # Create an instance of the ImageView
             buttons = self.bot.get_cog('Buttons').ImageView(interaction, response_data['images'], payload)
             #self.bot.get_cog('Buttons').payload = payload

@@ -125,7 +125,7 @@ class AIPromptGenerator(commands.Cog):
             # Regenerate the image using the updated payload
             #print (f"payload after AI: {payload}")
             response_data, payload = await self.bot.get_cog('Text2Image').txt2image(payload)
-            image_file = await self.bot.get_cog('Text2Image').pull_image(response_data)
+            image_file = await self.bot.get_cog('Text2Image').pull_image(response_data, interaction)
             print (f"payload after txt2img: {payload}")
 
             buttons = self.bot.get_cog('Buttons').ImageView(interaction, response_data['images'], payload)

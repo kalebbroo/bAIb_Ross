@@ -3,10 +3,9 @@ import discord
 from discord.ext import commands
 from discord import ButtonStyle, Interaction, ui
 from discord.ui import Button, View, Select, Modal, TextInput
-import base64
 from io import BytesIO
 from PIL import Image
-
+from datetime import datetime
 
 
 
@@ -43,12 +42,13 @@ class Buttons(commands.Cog):
             self.bot = bot
             self.payload = payload
             options = []
-            for image_file in image_files:
+            for i, image_file in enumerate(image_files):
                 # Create a SelectOption for each image file
-                option = discord.SelectOption(label=os.path.basename(image_file), value=image_file)
+                option = discord.SelectOption(label=f"Image {i+1}", value=image_file)
                 options.append(option)
 
-            super().__init__(placeholder='Images are labeled 0-3 from left to right', options=options)
+            super().__init__(placeholder='Images are labeled 1-4 from left to right', options=options)
+
 
 
         async def callback(self, interaction):
@@ -105,12 +105,13 @@ class Buttons(commands.Cog):
         def __init__(self, bot, image_files):
             self.bot = bot
             options = []
-            for image_file in image_files:
+            for i, image_file in enumerate(image_files):
                 # Create a SelectOption for each image file
-                option = discord.SelectOption(label=os.path.basename(image_file), value=image_file)
+                option = discord.SelectOption(label=f"Image {i+1}", value=image_file)
                 options.append(option)
 
-            super().__init__(placeholder='Images are labeled 0-3 from left to right', options=options)
+            super().__init__(placeholder='Images are labeled 1-4 from left to right', options=options)
+
 
 
         async def callback(self, interaction: Interaction):
@@ -169,7 +170,7 @@ class Buttons(commands.Cog):
 
             # Regenerate the image using the updated payload
             response_data, payload = await self.bot.get_cog('Text2Image').txt2image(self.payload)
-            image_file = await self.bot.get_cog('Text2Image').pull_image(response_data)
+            image_file = await self.bot.get_cog('Text2Image').pull_image(response_data, interaction)
 
 
             buttons = self.bot.get_cog('Buttons').ImageView(interaction, response_data['images'], self.payload)
@@ -185,37 +186,41 @@ class Buttons(commands.Cog):
 
 
 
-
-
     @commands.Cog.listener()
     async def on_interaction(self, interaction):
         if interaction.type == discord.InteractionType.component:
             button_id = interaction.data["custom_id"]
-            #payload = self.bot.get_cog('Buttons').payload
-            # Store the payload
             payload = interaction.client.payloads.get(str(interaction.user.id))
             self.payload = payload
-            # Retrieve the payload
 
-            #print(f"Payload before update: {self.payload}")
-            #self.payload = payload
-            #print(f"Payload after update: {self.payload}")
+            # Get the timestamp from the message
+            username = interaction.user.name
+            date_string, time_string = self.bot.image_timestamps[username]
+
+            # Get the username and the first three words of the prompt
+            prompt = interaction.client.payloads[str(interaction.user.id)]['prompt']
+            prompt_words = prompt.split()[:3]
+            prompt_string = "_".join(prompt_words)
+
+            # Get the path to the recently generated images
+            image_folder_path = os.path.join("cached_images", date_string, time_string)
 
             match button_id:
                 case "choose_img":
                     await interaction.response.defer()
-                    image_files = [os.path.join("image_cache", image_file) for image_file in os.listdir("image_cache")]
+                    # Get the recently generated images
+                    image_files = [os.path.join(image_folder_path, image_file) for image_file in os.listdir(image_folder_path)]
                     select_menu = self.ImageSelect(self.bot, image_files, payload)
                     select_menu_view = self.SelectMenuView(select_menu)
                     await interaction.channel.send("Select an image to generate more from.", view=select_menu_view)
 
                 case "upscale":
                     await interaction.response.defer()
-                    image_files = [os.path.join("image_cache", image_file) for image_file in os.listdir("image_cache")]
+                    # Get the recently generated images
+                    image_files = [os.path.join(image_folder_path, image_file) for image_file in os.listdir(image_folder_path)]
                     select_menu = self.UpscaleSelect(self.bot, image_files)
                     select_menu_view = self.SelectMenuView(select_menu)
                     await interaction.channel.send("Select an image to upscale so you can save it.", view=select_menu_view)
-
 
                 case "regenerate":
                     await interaction.response.defer()
@@ -223,7 +228,7 @@ class Buttons(commands.Cog):
                     # Regenerate the image using the stored payload
                     print(f"Payload before regeneration: {self.payload}")
                     response_data, payload = await self.bot.get_cog('Text2Image').txt2image(self.payload)
-                    image_file = await self.bot.get_cog('Text2Image').pull_image(response_data)
+                    image_file = await self.bot.get_cog('Text2Image').pull_image(response_data, interaction)
 
                     buttons = self.bot.get_cog('Buttons').ImageView(interaction, response_data['images'], self.payload)
 
@@ -233,20 +238,16 @@ class Buttons(commands.Cog):
                     # Update the message with the new image
                     await interaction.channel.send(embed=embed, file=image_file, view=buttons)
 
-
-
                 case "delete":
                     await interaction.response.defer()
                     # Delete the message
                     await interaction.message.delete()
                     await interaction.response.channel.send("Embed deleted", ephemeral=True)
 
-
                 case "edit":
                     # Create the modal and open it
                     modal = self.EditModal(self.bot, self.payload)
                     await interaction.response.send_modal(modal)
-
 
                 case "ai_prompt":
                     # Create the modal and open it

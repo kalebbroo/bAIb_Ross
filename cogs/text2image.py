@@ -7,6 +7,7 @@ from io import BytesIO
 from PIL import Image
 import base64
 from payload import Payload
+from datetime import datetime
 
 
 class Text2Image(commands.Cog):
@@ -40,7 +41,7 @@ class Text2Image(commands.Cog):
                     response_data = {}
                 return response_data, payload
                 
-    async def pull_image(self, response_data):
+    async def pull_image(self, response_data, interaction):
         # Get the list of images from the response
         images_data = response_data['images']
 
@@ -53,16 +54,33 @@ class Text2Image(commands.Cog):
         # Create a new image of the appropriate size to hold the grid
         grid_image = Image.new('RGB', (grid_size * images[0].width, grid_size * images[0].height))
 
+        # Get the current date and time
+        now = datetime.now()
+        date_string = now.strftime("%Y-%m-%d")
+        time_string = now.strftime("%H-%M-%S")
+
+        # Get the username and the first three words of the prompt
+        username = interaction.user.name
+        prompt = interaction.client.payloads[str(interaction.user.id)]['prompt']
+        prompt_words = prompt.split()[:3]
+        prompt_string = "_".join(prompt_words)
+
         # Place each image into the grid and save each image individually
         for i, image in enumerate(images):
             row = i // grid_size
             col = i % grid_size
             grid_image.paste(image, (col * image.width, row * image.height))
-            folder_path = "image_cache"
-            if not os.path.exists(folder_path):
-                os.makedirs(folder_path)
-            image_path = os.path.join(folder_path, f"image_{i}.png")
+
+            # Create the directory
+            os.makedirs(f"cached_images/{date_string}/{time_string}", exist_ok=True)
+
+            # Save the image
+            image_path = os.path.join("cached_images", date_string, time_string, f"{username}_{prompt_string}_{i}.png")
             image.save(image_path)
+
+            # After sending the message with the images
+            self.bot.image_timestamps[username] = date_string, time_string # Store the timestamp in the dictionary
+            print(f"Stored timestamp {time_string} {date_string} for {username}")
 
         # Save the grid image to a BytesIO object
         image_file = BytesIO()
@@ -73,6 +91,7 @@ class Text2Image(commands.Cog):
         image_file = discord.File(image_file, filename="temp.png")
 
         return image_file
+
 
 
         

@@ -66,6 +66,7 @@ async def on_ready():
     print(f"Loaded: {len(bot.cogs)} cogs")
     bot.model_list = await model_autocomplete()
     bot.payloads = {}
+    bot.image_timestamps = {}
     #print(model_list)
 
 

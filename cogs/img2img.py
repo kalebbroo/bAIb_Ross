@@ -5,6 +5,7 @@ from io import BytesIO
 from PIL import Image
 from discord.ext import commands
 from payload import Payload
+from datetime import datetime
 
 class Image2Image(commands.Cog):
     def __init__(self, bot):
@@ -56,33 +57,38 @@ class Image2Image(commands.Cog):
             await interaction.response.send_message("The file is not a valid image file.", ephemeral=True)
             return None
 
-
         # Build the upscale payload
         payload = await self.upscale_payload(self.bot, interaction, encoded_string)
-
 
         # Create a session and send the request to the API
         async with aiohttp.ClientSession() as session:
             async with session.post("http://localhost:7860/sdapi/v1/extra-single-image", json=payload) as response:
                 response_json = await response.json()
-                #print(f"Response JSON: {response_json}")
-            with open('response.txt', 'w') as file:
-                file.write(str(response_json))
-            
 
         # If the response is not None, save the upscaled image
         if response is not None:
             # Get the base64 string of the upscaled image from the response
             upscaled_image_data = response_json['image']
 
-
             # Convert the base64 string back to an image
             upscaled_image = Image.open(BytesIO(base64.b64decode(upscaled_image_data)))
 
+            # Get the current date and time
+            now = datetime.now()
+            date_string = now.strftime("%Y-%m-%d")
+            time_string = now.strftime("%H-%M-%S")
+
+            # Get the username and the first three words of the prompt
+            username = interaction.user.name
+            prompt = interaction.client.payloads[str(interaction.user.id)]['prompt']
+            prompt_words = prompt.split()[:3]
+            prompt_string = "_".join(prompt_words)
+
+            # Create the directory
+            os.makedirs(f"cached_images/upscaled/{date_string}/{time_string}", exist_ok=True)
+
             # Save the upscaled image and return the path
-            folder_path = "image_cache/upscaled_images"
-            os.makedirs(folder_path, exist_ok=True)
-            upscaled_image_path = os.path.join(folder_path, f"upscaled_image.png")
+            upscaled_image_path = os.path.join("cached_images", "upscaled", date_string, time_string, f"{username}_{prompt_string}.png")
             upscaled_image.save(upscaled_image_path)
 
             return upscaled_image_path
@@ -101,9 +107,6 @@ class Image2Image(commands.Cog):
         prompt = payload['prompt']
         new_payload = await self.img2img_payload(self.bot, interaction, [encoded_string], prompt)
 
-
-        #print(f"img2img Payload: {payload}")
-
         # Make the API request
         async with aiohttp.ClientSession() as session:
             async with session.post('http://localhost:7860/sdapi/v1/img2img', json=new_payload) as response:
@@ -115,12 +118,26 @@ class Image2Image(commands.Cog):
                     # Decode each image and convert it to a PIL Image object
                     new_images = [Image.open(BytesIO(base64.b64decode(image_data))) for image_data in new_images_data]
 
+                    # Get the current date and time
+                    now = datetime.now()
+                    date_string = now.strftime("%Y-%m-%d")
+                    time_string = now.strftime("%H-%M-%S")
+
+                    # Get the username and the first three words of the prompt
+                    username = interaction.user.name
+                    prompt_words = prompt.split()[:3]
+                    prompt_string = "_".join(prompt_words)
+
                     # Save each new image in the 'image_cache' folder
                     for i, image in enumerate(new_images):
-                        folder_path = "image_cache/new_images"
-                        os.makedirs(folder_path, exist_ok=True)
-                        new_images_path = os.path.join(folder_path, f"new_images_{i}.png")
-                        image.save(new_images_path)
+                        # Create the directory
+                        os.makedirs(f"cached_images/{date_string}/{time_string}", exist_ok=True)
+
+                        # Save the image
+                        image_path = os.path.join("cached_images", date_string, time_string, f"{username}_{prompt_string}_{i}.png")
+                        image.save(image_path)
+                        # After sending the message with the images
+                        self.bot.image_timestamps[username] = date_string, time_string # Store the timestamp in the dictionary
 
                     return new_images
                 else:
