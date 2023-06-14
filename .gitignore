@@ -399,3 +399,6 @@ FodyWeavers.xsd
 
 # Config
 config.py
+
+# Environment variable file
+.env
