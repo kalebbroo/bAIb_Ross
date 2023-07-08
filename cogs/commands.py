@@ -20,6 +20,7 @@ class Commands(commands.Cog):
 
     @app_commands.command(name="dream", description="Press ENTER to Generate an image")
     async def dream(self, interaction):
+        #await interaction.response.defer()
         #await interaction.followup.send(f"Generating Prompt Creator...", ephemeral=True)
         # Create the modal and open it
         modal = self.Txt2imgModal(self.bot)
@@ -102,10 +103,12 @@ class Commands(commands.Cog):
             self.add_item(self.settings)
 
         async def on_submit(self, interaction):
-            await interaction.response.defer()
+            #await interaction.response.defer()
 
             prompt = self.prompt.value
-            await interaction.followup.send(f"Creating image from prompt: {prompt}", ephemeral=True)
+            await interaction.response.send_message(f"Creating image from prompt: {prompt}", ephemeral=True)
+            #await interaction.channel.send(f"Creating image from prompt. Please Wait")
+            #await interaction.response.send_message(f"Creating image from prompt. Please Wait", ephemeral=True)
 
             styles = self.styles.value
             model = self.model.value
