@@ -2,13 +2,15 @@ import discord
 from discord.ext import commands
 from io import BytesIO
 import base64
-from config import TOKEN
 import os
 import requests
+from dotenv import load_dotenv
 
 intents = discord.Intents.all()
-bot = commands.Bot(command_prefix='/', intents=intents)
+bot = commands.Bot(command_prefix='+', intents=intents)
 
+load_dotenv()
+BOT_TOKEN = os.getenv('BOT_TOKEN')
 
 async def showcase(bot, image_data, info, channel_id):
     # Convert the base64 image data to bytes
@@ -64,7 +66,7 @@ async def on_ready():
     fmt  = await bot.tree.sync()
     print(f"synced {len(fmt)} commands")
     print(f"Loaded: {len(bot.cogs)} cogs")
-    bot.model_list = await model_autocomplete()
+    #bot.model_list = await model_autocomplete()
     bot.payloads = {}
     bot.image_timestamps = {}
     #print(model_list)
@@ -72,4 +74,4 @@ async def on_ready():
 
 
 if __name__ == "__main__":
-    bot.run(TOKEN)
+    bot.run(BOT_TOKEN)

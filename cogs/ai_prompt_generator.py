@@ -3,8 +3,11 @@ from discord.ext import commands
 from discord import app_commands
 from discord.ui import Button, View, Select, Modal, TextInput
 import openai
-from config import GPT_KEY
-from payload import Payload
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+GPT_KEY = os.getenv('GPT_KEY')
 
 class AIPromptGenerator(commands.Cog):
     def __init__(self, bot):

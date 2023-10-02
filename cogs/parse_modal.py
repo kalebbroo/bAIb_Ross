@@ -3,8 +3,6 @@ from discord.ext import commands
 from discord import app_commands
 from discord.ui import Button, View, Select, Modal, TextInput
 import openai
-from config import GPT_KEY
-from payload import Payload
 import requests
 import re
 

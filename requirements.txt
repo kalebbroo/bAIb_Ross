@@ -1,3 +1,5 @@
 discord.py
 pillow
 requests
+python-dotenv
+openai
