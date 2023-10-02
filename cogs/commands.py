@@ -45,25 +45,28 @@ class Commands(commands.Cog):
             if response.status != 200:
                 raise Exception(f"Failed to get model list. HTTP Status Code: {response.status}, Response Content: {await response.text()}")
             data = await response.json()
-            titles = [file.get("title") for file in data.get("files", [])]
-            filtered_titles = [title for title in titles if not title.startswith("0")]
             
+            model_list = [{"title": file.get("title"), "name": file.get("name")} for file in data.get("files", [])]
+            filtered_model_list = [model for model in model_list if not model['title'].startswith("0")]
+
             def sort_key(x):
                 try:
-                    return int(x.split(" ")[0].split(".")[0])
+                    return int(x['title'].split(" ")[0].split(".")[0])
                 except ValueError:
                     return float('inf')
             
-            sorted_titles = sorted(filtered_titles, key=sort_key)
-            return sorted_titles
+            sorted_model_list = sorted(filtered_model_list, key=sort_key)
+            return sorted_model_list
+
                     
     async def model_setting(self, bot, settings_data, start=0):
         model_options = await self.get_model_list()
         sliced_model_options = model_options[start:start + 24]
-        model_option_instances = [discord.SelectOption(label=model, value=model) for model in sliced_model_options]
+        model_option_instances = [discord.SelectOption(label=model["title"], value=model["name"]) for model in sliced_model_options]
         if len(model_options) > start + 24:
             model_option_instances.append(discord.SelectOption(label="Show more models...", value="Show more models..."))
         return Commands.SettingsSelect(bot, "Choose a Model", model_option_instances, self.steps_setting, settings_data, start=start)
+
     
     def steps_setting(self, bot, settings_data):
         step_values = ["5", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "30", "40", "50", "60", "70", "80"]
