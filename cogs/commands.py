@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 from discord.ui import Button, View, Select, Modal, TextInput
+from discord import ButtonStyle, Interaction, ui
 import requests
 from typing import List
 import aiohttp
@@ -22,13 +23,11 @@ class Commands(commands.Cog):
         Commands.user_settings[user_id] = {"ai_assistance": ai_assistance}
 
         if change_settings:
-            first_setting = self.model_setting
             settings_data = {}
-            first_select_menu = await first_setting(self.bot, settings_data, start=0)
-            view = discord.ui.View()
-            view.add_item(first_select_menu)
-            embed = discord.Embed(title=f"Setting for {first_select_menu.placeholder}", description="Choose an option.")
-            await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+            first_model, model_view = await self.model_setting(self.bot, interaction, settings_data, start=0)
+            embed = discord.Embed(title=f"Setting for {first_model['title']}", description="Choose an option.")
+            await interaction.response.send_message(embed=embed, view=model_view, ephemeral=True)
+
         else:
             modal = self.Txt2imgModal(self.bot, interaction)
             await interaction.response.send_modal(modal)
@@ -51,17 +50,71 @@ class Commands(commands.Cog):
                     "name": file.get("name"),
                     "standard_width": file.get("standard_width"),
                     "standard_height": file.get("standard_height"),
+                    "description": file.get("description"),
+                    "preview_image": file.get("preview_image"),
+                    "trigger_phrase": file.get("trigger_phrase"),
+                    "usage_hint": file.get("usage_hint"),
                 }
                 for file in data.get("files", [])
             ]
+            #print(model_list)
             return model_list
-
                     
-    async def model_setting(self, bot, settings_data, start=0):
+    class ModelView(discord.ui.View):
+        def __init__(self, bot, models, index, settings_data):
+            super().__init__(timeout=180)
+            self.bot = bot
+            self.models = models
+            self.index = index
+            self.settings_data = settings_data
+            
+            self.add_item(Button(style=ButtonStyle.primary, label="Next", custom_id="next_model"))
+            self.add_item(Button(style=ButtonStyle.primary, label="Back", custom_id="previous_model"))
+            self.add_item(Button(style=ButtonStyle.success, label="Choose Model", custom_id="choose_model"))
+            self.add_item(Button(style=ButtonStyle.secondary, label="Choose from List", custom_id="choose_from_list"))
+
+    @commands.Cog.listener()
+    async def on_interaction(self, interaction):
+        if interaction.type == discord.InteractionType.component:
+            button_id = interaction.data["custom_id"]
+
+            match button_id:
+                case "next_model":
+                    await interaction.response.defer()
+                    self.index = (self.index + 1) % len(self.models)
+                    await self.send_model_embed(interaction)
+                case "previous_model":
+                    await interaction.response.defer()
+                    self.index = (self.index - 1) % len(self.models)
+                    await self.send_model_embed(interaction)
+                case "choose_model":
+                    self.settings_data["Choose a Model"] = self.models[self.index]["name"]
+                    next_select_menu = await self.bot.get_cog("Commands").steps_setting(self.bot, self.settings_data, self.models)
+                    view = discord.ui.View()
+                    view.add_item(next_select_menu)
+                    embed = discord.Embed(title=f"Setting for {next_select_menu.placeholder}", description="Choose an option.")
+                    await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+                    return
+                case "choose_from_list":
+                    next_select_menu = await self.bot.get_cog("Commands").model_setting(self.bot, self.settings_data, start=0)
+                    view = discord.ui.View()
+                    view.add_item(next_select_menu)
+                    embed = discord.Embed(title=f"Setting for {next_select_menu.placeholder}", description="Choose an option.")
+                    await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+                    return
+            await self.send_model_embed(interaction)
+
+    async def send_model_embed(self, interaction):
+        model = self.models[self.index]
+        embed = discord.Embed(title=model["title"], description=model["description"])
+        await interaction.response.edit_message(embed=embed, view=self)
+
+    async def model_setting(self, bot, interaction, settings_data, start=0):
         model_list = await self.get_model_list()
-        sliced_model_options = model_list[start:start + 24]
-        model_option_instances = [discord.SelectOption(label=model["title"], value=model["name"]) for model in sliced_model_options]
-        return Commands.SettingsSelect(bot, "Choose a Model", model_option_instances, self.steps_setting, settings_data, model_list, start=start)
+        model_view = Commands.ModelView(bot, model_list, 0, settings_data)
+        first_model = model_list[0]
+        return first_model, model_view
+
     
     def steps_setting(self, bot, settings_data, model_list):
         step_values = ["5", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "30", "40", "50", "60", "70", "80"]
