@@ -58,8 +58,7 @@ class Commands(commands.Cog):
                 }
                 for file in data.get("files", [])
             ]
-
-            # Sort the model list by the 'title' field
+            # Sort the model list by 'title'
             model_list.sort(key=lambda x: (x['title'][0].isdigit(), int(''.join(filter(str.isdigit, x['title'].split()[0]))) if x['title'][0].isdigit() else x['title']))
             
             return model_list
@@ -253,7 +252,6 @@ class Commands(commands.Cog):
 
         async def on_submit(self, interaction):
             prompt = self.prompt.value
-            await interaction.response.send_message(f"Creating image from prompt: {prompt}", ephemeral=True)
             negative = self.negative.value
             user_id = interaction.user.id
             settings_data = Commands.user_settings.get(user_id, {})
@@ -265,6 +263,11 @@ class Commands(commands.Cog):
                 width, height = map(int, size_choice.split('-'))
             else:
                 width, height = None, None
+
+            # If AI assistance is enabled, rewrite the prompt and negative
+            if ai_assistance:
+                ai_prompt_generator = self.bot.get_cog("AIPromptGenerator")
+                prompt, negative = await ai_prompt_generator.rewrite_prompt_and_negative(prompt, negative)
 
             # Create the payload
             api_call = self.bot.get_cog("APICalls")
@@ -282,6 +285,8 @@ class Commands(commands.Cog):
                 embedding=settings_data.get("Choose Embedding")
             )
             payload.update({"ai_assistance": ai_assistance})
+
+            await interaction.response.send_message(f"Creating image from prompt: {prompt}", ephemeral=True)
             await api_call.call_collect(interaction, payload)
 
 async def setup(bot):
