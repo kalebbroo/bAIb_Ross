@@ -71,10 +71,10 @@ class Commands(commands.Cog):
             self.index = index
             self.settings_data = settings_data
             
-            self.add_item(Button(style=ButtonStyle.primary, label="Next", custom_id="next_model"))
-            self.add_item(Button(style=ButtonStyle.primary, label="Back", custom_id="previous_model"))
-            self.add_item(Button(style=ButtonStyle.success, label="Choose Model", custom_id="choose_model"))
-            self.add_item(Button(style=ButtonStyle.secondary, label="Choose from List", custom_id="choose_from_list"))
+            self.add_item(Button(style=ButtonStyle.primary, label="Back", custom_id="previous_model", row=1))
+            self.add_item(Button(style=ButtonStyle.success, label="Choose Model", custom_id="choose_model", row=1))
+            self.add_item(Button(style=ButtonStyle.primary, label="Next", custom_id="next_model", row=1))
+            self.add_item(Button(style=ButtonStyle.secondary, label="Generate Model List", custom_id="choose_from_list", row=2))
 
     @commands.Cog.listener()
     async def on_interaction(self, interaction):

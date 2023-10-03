@@ -9,9 +9,7 @@ import discord
 import logging
 import aiohttp
 import os
-from dotenv import load_dotenv
 
-load_dotenv()
 SWARM_URL = os.getenv('SWARM_URL')
 
 class APICalls(commands.Cog):
