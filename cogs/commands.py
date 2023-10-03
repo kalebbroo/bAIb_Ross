@@ -78,15 +78,19 @@ class Commands(commands.Cog):
     async def on_interaction(self, interaction):
         if interaction.type == discord.InteractionType.component:
             button_id = interaction.data["custom_id"]
+            # Fetch the current list of models
+            current_models = await self.get_model_list()
+            models_length = len(current_models)
+            current_index = 0
 
             match button_id:
                 case "next_model":
                     await interaction.response.defer()
-                    self.index = (self.index + 1) % len(self.models)
+                    current_index = self.update_model_index(current_index, models_length, direction='next')
                     await self.send_model_embed(interaction)
                 case "previous_model":
                     await interaction.response.defer()
-                    self.index = (self.index - 1) % len(self.models)
+                    current_index = self.update_model_index(current_index, models_length, direction='previous')
                     await self.send_model_embed(interaction)
                 case "choose_model":
                     self.settings_data["Choose a Model"] = self.models[self.index]["name"]
@@ -104,6 +108,26 @@ class Commands(commands.Cog):
                     await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
                     return
             await self.send_model_embed(interaction)
+
+    def update_model_index(self, current_index, models_length, direction='next'):
+        """
+        Update the model index based on the direction ('next' or 'previous')
+
+        Parameters:
+        - current_index: The current index
+        - models_length: The total number of models
+        - direction: 'next' to increment, 'previous' to decrement
+
+        Returns:
+        - The updated index
+        """
+        if direction == 'next':
+            return (current_index + 1) % models_length
+        elif direction == 'previous':
+            return (current_index - 1) % models_length
+        else:
+            return current_index  # No change if direction is not recognized
+
 
     async def send_model_embed(self, interaction):
         model = self.models[self.index]
