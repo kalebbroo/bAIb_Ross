@@ -34,7 +34,7 @@ class APICalls(commands.Cog):
     def create_payload(session_id, prompt=None, negative_prompt=None, images=4,
                         donotsave=True, model=None, width=None, height=None,
                         cfgscale=None, steps=10, seed=-1, enableaitemplate=None, 
-                        init_image=None, init_image_creativity=None):
+                        init_image=None, init_image_creativity=None, lora=None, embedding=None):
         base_payload = {
             "session_id": session_id,
             "images": images,
@@ -49,7 +49,9 @@ class APICalls(commands.Cog):
             "steps": steps,
             "enableaitemplate": enableaitemplate,
             "init_image": init_image,
-            "init_image_creativity": init_image_creativity
+            "init_image_creativity": init_image_creativity,
+            "lora": lora,
+            "embedding": embedding
         }
         return {k: v for k, v in base_payload.items() if v is not None}
 

@@ -45,70 +45,78 @@ class Commands(commands.Cog):
             if response.status != 200:
                 raise Exception(f"Failed to get model list. HTTP Status Code: {response.status}, Response Content: {await response.text()}")
             data = await response.json()
-            
-            model_list = [{"title": file.get("title"), "name": file.get("name")} for file in data.get("files", [])]
-            filtered_model_list = [model for model in model_list if not model['title'].startswith("0")]
-
-            def sort_key(x):
-                try:
-                    return int(x['title'].split(" ")[0].split(".")[0])
-                except ValueError:
-                    return float('inf')
-            
-            sorted_model_list = sorted(filtered_model_list, key=sort_key)
-            return sorted_model_list
+            model_list = [
+                {
+                    "title": file.get("title"),
+                    "name": file.get("name"),
+                    "standard_width": file.get("standard_width"),
+                    "standard_height": file.get("standard_height"),
+                }
+                for file in data.get("files", [])
+            ]
+            return model_list
 
                     
     async def model_setting(self, bot, settings_data, start=0):
-        model_options = await self.get_model_list()
-        sliced_model_options = model_options[start:start + 24]
+        model_list = await self.get_model_list()
+        sliced_model_options = model_list[start:start + 24]
         model_option_instances = [discord.SelectOption(label=model["title"], value=model["name"]) for model in sliced_model_options]
-        if len(model_options) > start + 24:
-            model_option_instances.append(discord.SelectOption(label="Show more models...", value="Show more models..."))
-        return Commands.SettingsSelect(bot, "Choose a Model", model_option_instances, self.steps_setting, settings_data, start=start)
-
+        return Commands.SettingsSelect(bot, "Choose a Model", model_option_instances, self.steps_setting, settings_data, model_list, start=start)
     
-    def steps_setting(self, bot, settings_data):
+    def steps_setting(self, bot, settings_data, model_list):
         step_values = ["5", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "30", "40", "50", "60", "70", "80"]
         steps = [discord.SelectOption(label=value, value=value) for value in step_values]
-        return Commands.SettingsSelect(bot, "Choose Steps", steps, self.cfg_scale_setting, settings_data)
+        return Commands.SettingsSelect(bot, "Choose Steps", steps, self.cfgscale_setting, settings_data, model_list)
 
-    def cfg_scale_setting(self, bot, settings_data):
-        cfg_scale = [discord.SelectOption(label=str(i), value=str(i)) for i in range(1, 11)]
-        return Commands.SettingsSelect(bot, "Choose CFG Scale", cfg_scale, self.lora_setting, settings_data)
+    def cfgscale_setting(self, bot, settings_data, model_list):
+        cfgscale = [discord.SelectOption(label=str(i), value=str(i)) for i in range(1, 11)]
+        return Commands.SettingsSelect(bot, "Choose CFG Scale", cfgscale, self.lora_setting, settings_data, model_list)
 
-    def lora_setting(self, bot, settings_data):
+    def lora_setting(self, bot, settings_data, model_list):
         lora = [discord.SelectOption(label="Placeholder", value="Placeholder")]
-        return Commands.SettingsSelect(bot, "Choose LORA", lora, self.embeddings_setting, settings_data)
+        return Commands.SettingsSelect(bot, "Choose LORA", lora, self.embedding_setting, settings_data, model_list)
 
-    def embeddings_setting(self, bot, settings_data):
-        embeddings = [discord.SelectOption(label="Placeholder", value="Placeholder")]
-        return Commands.SettingsSelect(bot, "Choose Embeddings", embeddings, self.size_setting, settings_data)
+    def embedding_setting(self, bot, settings_data, model_list):
+        embedding = [discord.SelectOption(label="Placeholder", value="Placeholder")]
+        return Commands.SettingsSelect(bot, "Choose Embeddings", embedding, self.size_setting, settings_data, model_list)
 
-    def size_setting(self, bot, settings_data):
-        size_values = {
-            "1:1": (1024, 1024),
-            "4:3": (1024, 768),
-            "3:2": (1800, 1200),
-            "16:9": (1920, 1080),
-            "21:9": (2560, 1080),
-            "8:5": (1280, 800),
-            "3:4": (768, 1024),
-            "2:3": (800, 1200),
-            "5:8": (720, 1280),
-            "9:16": (1080, 1920),
-            "9:21": (1080, 2520)
-        }
+    def scale_to_aspect_ratio(self, base_width, base_height, aspect_ratio):
+        w, h = map(int, aspect_ratio.split(":"))
+        new_width = base_width
+        new_height = int((new_width * h) / w)
+        if new_height > base_height:
+            new_height = base_height
+            new_width = int((new_height * w) / h)
+        return new_width, new_height
+
+    def size_setting(self, bot, settings_data, model_list):
+        model_name = settings_data.get("Choose a Model")
+        chosen_model = next((model for model in model_list if model["name"] == model_name), None)
+
+        if chosen_model:
+            standard_width = chosen_model.get("standard_width")
+            standard_height = chosen_model.get("standard_height")
+        else:
+            standard_width = 1024  # Default values
+            standard_height = 1024
+
+        aspect_ratios = ["1:1", "4:3", "3:2", "16:9", "21:9", "8:5", "3:4", "2:3", "5:8", "9:16", "9:21"]
+        size_values = {}
+        for aspect_ratio in aspect_ratios:
+            width, height = self.scale_to_aspect_ratio(standard_width, standard_height, aspect_ratio)
+            size_values[aspect_ratio] = (width, height)
+
         size_options = [discord.SelectOption(label=label, value=f"{width}-{height}") for label, (width, height) in size_values.items()]
         return Commands.SettingsSelect(bot, "Choose Size", size_options, None, settings_data)
 
                 
     class SettingsSelect(discord.ui.Select):
-        def __init__(self, bot, placeholder, options, next_setting=None, settings_data=None, start=0):
+        def __init__(self, bot, placeholder, options, next_setting=None, settings_data=None, model_list=None, start=0):
             super().__init__(placeholder=placeholder, options=options, row=0)
             self.bot = bot
             self.next_setting = next_setting
             self.settings_data = settings_data or {}
+            self.model_list = model_list
             self.start = start
 
         async def callback(self, interaction: discord.Interaction):
@@ -122,7 +130,7 @@ class Commands(commands.Cog):
             else:
                 self.settings_data[self.placeholder] = selected_value
                 if self.next_setting:
-                    next_select_menu = self.next_setting(self.bot, self.settings_data)
+                    next_select_menu = self.next_setting(self.bot, self.settings_data, self.model_list)
                     view = discord.ui.View()
                     view.add_item(next_select_menu)
                     embed = discord.Embed(title=f"Setting for {next_select_menu.placeholder}", description="Choose an option.")
@@ -174,9 +182,9 @@ class Commands(commands.Cog):
                 width=width,
                 height=height,
                 steps=settings_data.get("Choose Steps"),
-                cfg_scale=settings_data.get("Choose CFG Scale"),
+                cfgscale=settings_data.get("Choose CFG Scale"),
                 lora=settings_data.get("Choose LORA"),
-                embeddings=settings_data.get("Choose Embeddings")
+                embedding=settings_data.get("Choose Embedding")
             )
             payload.update({"ai_assistance": ai_assistance})
             await api_call.call_collect(interaction, payload)
