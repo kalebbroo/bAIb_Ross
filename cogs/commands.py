@@ -58,7 +58,10 @@ class Commands(commands.Cog):
                 }
                 for file in data.get("files", [])
             ]
-            #print(model_list)
+
+            # Sort the model list by the 'title' field
+            model_list.sort(key=lambda x: (x['title'][0].isdigit(), int(''.join(filter(str.isdigit, x['title'].split()[0]))) if x['title'][0].isdigit() else x['title']))
+            
             return model_list
                     
     class ModelView(discord.ui.View):
@@ -131,15 +134,12 @@ class Commands(commands.Cog):
 
     async def send_model_embed(self, interaction):
         model = self.models[self.index]
-        
-        # Create a new Discord embed object with a green color bar
+
         embed = discord.Embed(title=model.get("title", "N/A"), description=model.get("description", "N/A"), color=0x00ff00)
-        
-        # Add a thumbnail to the embed if the model has a preview image
         if model.get("preview_image"):
             embed.set_thumbnail(url=model["preview_image"])
             
-        # Add fields for standard width, standard height, trigger phrase, and usage hint
+        # Add fields for model details to embed
         embed.add_field(name="Name", value=model.get("name", "N/A"), inline=True)
         embed.add_field(name="Standard Width", value=model.get("standard_width", "N/A"), inline=True)
         embed.add_field(name="Standard Height", value=model.get("standard_height", "N/A"), inline=True)
@@ -150,7 +150,6 @@ class Commands(commands.Cog):
         embed.set_footer(text="Use the buttons below to navigate between models.")
         embed.timestamp = datetime.utcnow()
         
-        # Send the embed
         await interaction.response.edit_message(embed=embed, view=self)
 
     async def model_setting(self, bot, interaction, settings_data, start=0):
@@ -158,7 +157,6 @@ class Commands(commands.Cog):
         model_view = Commands.ModelView(bot, model_list, 0, settings_data)
         first_model = model_list[0]
         return first_model, model_view
-
     
     def steps_setting(self, bot, settings_data, model_list):
         step_values = ["5", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "30", "40", "50", "60", "70", "80"]
