@@ -22,11 +22,11 @@ class Commands(commands.Cog):
     @app_commands.command(name="dream", description="Press ENTER to Generate an image")
     @app_commands.describe(ai_assistance='Want AI to rewrite prompt?', change_settings='Do you want to edit settings?')
     async def dream(self, interaction, ai_assistance: bool, change_settings: bool):
-        await interaction.response.defer()
         user_id = interaction.user.id
         Commands.user_settings[user_id] = {"ai_assistance": ai_assistance}
 
         if change_settings:
+            await interaction.response.defer()
             settings_data = {}
             
             # Initialize self.models and self.index if they are not already initialized
