@@ -106,7 +106,7 @@ class Buttons(commands.Cog):
                     await interaction.response.defer()
                     # Get the recently generated images
                     image_files = [os.path.join(image_folder_path, image_file) for image_file in os.listdir(image_folder_path)]
-                    select_menu = self.ImageSelect(self.bot, image_files, payload)
+                    select_menu = self.ImageSelect(self.bot, image_files, self.payload)
                     select_menu_view = self.SelectMenuView(select_menu)
                     await interaction.channel.send("Select an image to generate more from.", view=select_menu_view)
                 case "upscale":
@@ -119,16 +119,8 @@ class Buttons(commands.Cog):
                 case "regenerate":
                     await interaction.response.defer()
                     await interaction.followup.send("Regenerating...")
-                    # Regenerate the image using the stored payload
-                    print(f"Payload before regeneration: {self.payload}")
-                    response_data, payload = await self.bot.get_cog('Text2Image').txt2image(self.payload)
-                    image_file = await self.bot.get_cog('Text2Image').pull_image(response_data, interaction)
-                    buttons = self.bot.get_cog('Buttons').ImageView(interaction, response_data['images'], self.payload)
-                    # Create the embed
-                    embed = await self.bot.get_cog('Commands').create_embed(interaction, self.payload['prompt'], self.payload['negative_prompt'], 
-                                                                            self.payload['steps'], self.payload['seed'], self.payload['cfg_scale'])
-                    # Update the message with the new image
-                    await interaction.channel.send(embed=embed, file=image_file, view=buttons)
+                    #TODO: get the payload
+                    await self.bot.get_cog('APICalls').call_collect(interaction, self.payload)
                 case "delete":
                     await interaction.response.defer()
                     # Delete the message
