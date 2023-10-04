@@ -30,8 +30,9 @@ class APICalls(commands.Cog):
 
     @staticmethod
     def create_payload(session_id, prompt=None, negative_prompt=None, images=4,
-                        donotsave=True, model=None, width=None, height=None,
-                        cfgscale=None, steps=10, seed=-1, enableaitemplate=None, 
+                        donotsave=True, model='OfficialStableDiffusion/sd_xl_base_1.0.safetensors', 
+                        width=None, height=None, cfgscale=None,
+                        steps=10, seed=-1, enableaitemplate=None, 
                         init_image=None, init_image_creativity=None, lora=None, embedding=None):
         base_payload = {
             "session_id": session_id,

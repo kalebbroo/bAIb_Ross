@@ -85,7 +85,7 @@ class GenerateImage(commands.Cog):
             session_id=self.session_id if self.session_id else api_call.session_id,
             prompt=prompt,
             negative_prompt=negative_prompt,
-            model="colossusProjectXLSFW_v10BakedVAEFP16",
+            model="OfficialStableDiffusion/sd_xl_base_1.0.safetensors",
             width=1024,
             height=1024,
             cfgscale=7,
