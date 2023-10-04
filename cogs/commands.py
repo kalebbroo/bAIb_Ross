@@ -34,8 +34,10 @@ class Commands(commands.Cog):
                 self.models = await self.get_model_list()
             self.index = 0  # Or whatever index you want for the initial model
 
-            # Send the initial embed using the send_model_embed method
-            await self.send_model_embed(interaction)
+            # Create an instance of ModelView
+            model_view_instance = Commands.ModelView(self.bot, self.models, self.index, {})
+            # Send the initial embed using the send_model_embed method of ModelView instance
+            await model_view_instance.send_model_embed(interaction)
 
         else:
             modal = self.Txt2imgModal(self.bot, interaction)
@@ -82,6 +84,38 @@ class Commands(commands.Cog):
             self.index = index
             self.settings_data = settings_data
 
+        async def send_model_embed(self, interaction):
+            model = self.models[self.index]
+            embed = discord.Embed(title=model.get("title", "N/A"), description=model.get("description", "N/A"), color=0x00ff00)
+            
+            image_file = None
+
+            if model.get("preview_image"):
+                base64_image_data = model.get("preview_image")
+                if base64_image_data.startswith('data:image/jpeg;base64,'):
+                    base64_image_data = base64_image_data[len('data:image/jpeg;base64,'):]
+
+                # Decode the base64 string into bytes
+                image_bytes = base64.b64decode(base64_image_data)
+                # Create a discord.File object
+                image_file = discord.File(io.BytesIO(image_bytes), filename="preview_image.jpeg")
+                embed.set_image(url="attachment://preview_image.jpeg")  # Set the image in the embed
+
+            # Add other details to the embed as you were doing before
+            embed.add_field(name="Name", value=model.get("name", "N/A"), inline=True)
+            embed.add_field(name="Standard Width", value=model.get("standard_width", "N/A"), inline=True)
+            embed.add_field(name="Standard Height", value=model.get("standard_height", "N/A"), inline=True)
+            embed.add_field(name="Trigger Phrase", value=model.get("trigger_phrase", "N/A"), inline=False)
+            embed.add_field(name="Usage Hint", value=model.get("usage_hint", "N/A"), inline=False)
+            embed.set_footer(text="Use the buttons below to navigate between models.")
+            embed.timestamp = datetime.utcnow()
+
+            if image_file:
+                await interaction.followup.send(embed=embed, view=self, ephemeral=True, file=image_file)
+            else:
+                await interaction.followup.send(embed=embed, view=self, ephemeral=True)
+
+
         @discord.ui.button(style=discord.ButtonStyle.primary, label="Back", row=1)
         async def previous_model(self, interaction, button):
             await interaction.response.defer()
@@ -110,41 +144,6 @@ class Commands(commands.Cog):
             view.add_item(next_select_menu)
             embed = discord.Embed(title=f"Setting for {next_select_menu.placeholder}", description="Choose an option.")
             await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
-
-
-    async def send_model_embed(self, interaction):
-        model = self.models[self.index]
-        embed = discord.Embed(title=model.get("title", "N/A"), description=model.get("description", "N/A"), color=0x00ff00)
-        
-        image_file = None
-
-        if model.get("preview_image"):
-            base64_image_data = model.get("preview_image")
-
-            if base64_image_data.startswith('data:image/jpeg;base64,'):
-                base64_image_data = base64_image_data[len('data:image/jpeg;base64,'):]
-
-            # Decode the base64 string into bytes
-            image_bytes = base64.b64decode(base64_image_data)
-            # Create a discord.File object
-            image_file = discord.File(io.BytesIO(image_bytes), filename="preview_image.jpeg")
-            embed.set_image(url="attachment://preview_image.jpeg")  # Set the image in the embed
-
-        # Add other details to the embed as you were doing before
-        embed.add_field(name="Name", value=model.get("name", "N/A"), inline=True)
-        embed.add_field(name="Standard Width", value=model.get("standard_width", "N/A"), inline=True)
-        embed.add_field(name="Standard Height", value=model.get("standard_height", "N/A"), inline=True)
-        embed.add_field(name="Trigger Phrase", value=model.get("trigger_phrase", "N/A"), inline=False)
-        embed.add_field(name="Usage Hint", value=model.get("usage_hint", "N/A"), inline=False)
-        embed.set_footer(text="Use the buttons below to navigate between models.")
-        embed.timestamp = datetime.utcnow()
-
-        model_view_instance = Commands.ModelView(self.bot, self.models, self.index, {})
-
-        if image_file:
-            await interaction.followup.send(embed=embed, view=model_view_instance, ephemeral=True, file=image_file)
-        else:
-            await interaction.followup.send(embed=embed, view=model_view_instance, ephemeral=True)
 
 
     async def model_setting(self, bot, interaction, settings_data, start=0):
