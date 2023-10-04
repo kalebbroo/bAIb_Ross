@@ -262,8 +262,8 @@ class Commands(commands.Cog):
 
             # If AI assistance is enabled, rewrite the prompt and negative
             if ai_assistance:
-                ai_prompt_generator = self.bot.get_cog("AIPromptGenerator")
-                prompt, negative = await ai_prompt_generator.rewrite_prompt(prompt, negative)
+                ai = self.bot.get_cog("AIPromptGenerator")
+                prompt, negative = await ai.rewrite_prompt(prompt, negative)
 
             # Create the payload
             api_call = self.bot.get_cog("APICalls")
