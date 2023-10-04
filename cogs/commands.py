@@ -246,6 +246,7 @@ class Commands(commands.Cog):
             self.add_item(self.negative)
 
         async def on_submit(self, interaction):
+            await interaction.response.defer()
             prompt = self.prompt.value
             negative = self.negative.value
             user_id = interaction.user.id
@@ -284,7 +285,7 @@ class Commands(commands.Cog):
             )
             payload.update({"ai_assistance": ai_assistance})
 
-            await interaction.response.send_message(f"Creating image from prompt: {prompt}", ephemeral=True)
+            await interaction.followup.send(f"Creating image from prompt: {prompt}", ephemeral=True)
             await api_call.call_collect(interaction, payload)
 
 async def setup(bot):
