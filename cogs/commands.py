@@ -263,7 +263,7 @@ class Commands(commands.Cog):
             if ai_assistance:
                 print("AI assistance is enabled")
                 ai = self.bot.get_cog("AIPromptGenerator")
-                prompt, negative = await ai.rewrite_prompt(prompt, negative)
+                prompt, negative = await ai.rewrite_prompt(interaction, prompt, negative)
             else:
                 print("AI assistance is disabled")
 

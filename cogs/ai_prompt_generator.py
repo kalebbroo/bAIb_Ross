@@ -17,7 +17,7 @@ class AIPromptGenerator(commands.Cog):
         with open('pre_prompt.txt', 'r', encoding='utf-8') as file:
             return file.read()
 
-    async def rewrite_prompt(self, interaction, prompt):
+    async def rewrite_prompt(self, interaction, prompt, negative):
         model_list = self.openai.Model.list()
         print(f"Model List: {model_list}")
         prompt = ''.join(prompt)
