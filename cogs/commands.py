@@ -18,9 +18,6 @@ class Commands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.session = aiohttp.ClientSession()
-        self.models = []
-        self.index = 0
-        self.settings_data = {}
 
     @app_commands.command(name="dream", description="Press ENTER to Generate an image")
     @app_commands.describe(ai_assistance='Want AI to rewrite prompt?', change_settings='Do you want to edit settings?')
@@ -31,7 +28,6 @@ class Commands(commands.Cog):
 
         if change_settings:
             settings_data = {}
-            first_model, model_view = await self.model_setting(self.bot, interaction, settings_data, start=0)
             
             # Initialize self.models and self.index if they are not already initialized
             if not hasattr(self, 'models') or not self.models:
@@ -77,7 +73,7 @@ class Commands(commands.Cog):
             print(titles)
             
             return model_list
-                    
+
     class ModelView(discord.ui.View):
         def __init__(self, bot, models, index, settings_data):
             super().__init__(timeout=180)
@@ -85,71 +81,35 @@ class Commands(commands.Cog):
             self.models = models
             self.index = index
             self.settings_data = settings_data
-            
-            self.add_item(Button(style=ButtonStyle.primary, label="Back", custom_id="previous_model", row=1))
-            self.add_item(Button(style=ButtonStyle.success, label="Choose Model", custom_id="choose_model", row=1))
-            self.add_item(Button(style=ButtonStyle.primary, label="Next", custom_id="next_model", row=1))
-            self.add_item(Button(style=ButtonStyle.secondary, label="Generate Model List", custom_id="choose_from_list", row=2))
 
-    @commands.Cog.listener()
-    async def on_interaction(self, interaction):
-        if interaction.type == discord.InteractionType.component:
-            button_id = interaction.data["custom_id"]
-            
-            # Only fetch the model list if self.models is not already initialized
-            if not hasattr(self, 'models') or not self.models:
-                self.models = await self.get_model_list()
-            models_length = len(self.models)
-            # Only initialize self.index if it's not already initialized
-            if not hasattr(self, 'index'):
-                self.index = 0
-
-            match button_id:
-                case "next_model":
-                    await interaction.response.defer()
-                    self.index = self.update_model_index(self.index, models_length, direction='next')
-                    await self.send_model_embed(interaction)
-                    return  # Added return to exit the function after sending the embed
-                case "previous_model":
-                    await interaction.response.defer()
-                    self.index = self.update_model_index(self.index, models_length, direction='previous')
-                    await self.send_model_embed(interaction)
-                    return 
-                case "choose_model":
-                    self.settings_data["Choose a Model"] = self.models[self.index]["name"]
-                    next_select_menu = self.bot.get_cog("Commands").steps_setting(self.bot, self.settings_data, self.models)
-                    view = discord.ui.View()
-                    view.add_item(next_select_menu)
-                    embed = discord.Embed(title=f"Setting for {next_select_menu.placeholder}", description="Choose an option.")
-                    await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
-                    return
-                case "choose_from_list":
-                    next_select_menu = await self.bot.get_cog("Commands").model_setting(self.bot, self.settings_data, start=0)
-                    view = discord.ui.View()
-                    view.add_item(next_select_menu)
-                    embed = discord.Embed(title=f"Setting for {next_select_menu.placeholder}", description="Choose an option.")
-                    await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
-                    return
+        @discord.ui.button(style=discord.ButtonStyle.primary, label="Back", row=1)
+        async def previous_model(self, interaction, button):
+            await interaction.response.defer()
+            self.index = (self.index - 1) % len(self.models)
             await self.send_model_embed(interaction)
 
-    def update_model_index(self, current_index, models_length, direction='next'):
-        """
-        Update the model index based on the direction ('next' or 'previous')
+        @discord.ui.button(style=discord.ButtonStyle.success, label="Choose Model", row=1)
+        async def choose_model(self, interaction, button):
+            self.settings_data["Choose a Model"] = self.models[self.index]["name"]
+            next_select_menu = self.bot.get_cog("Commands").steps_setting(self.bot, self.settings_data, self.models)
+            view = discord.ui.View()
+            view.add_item(next_select_menu)
+            embed = discord.Embed(title=f"Setting for {next_select_menu.placeholder}", description="Choose an option.")
+            await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
-        Parameters:
-        - current_index: The current index
-        - models_length: The total number of models
-        - direction: 'next' to increment, 'previous' to decrement
+        @discord.ui.button(style=discord.ButtonStyle.primary, label="Next", row=1)
+        async def next_model(self, interaction, button):
+            await interaction.response.defer()
+            self.index = (self.index + 1) % len(self.models)
+            await self.send_model_embed(interaction)
 
-        Returns:
-        - The updated index
-        """
-        if direction == 'next':
-            return (current_index + 1) % models_length
-        elif direction == 'previous':
-            return (current_index - 1) % models_length
-        else:
-            return current_index  # No change if direction is not recognized
+        @discord.ui.button(style=discord.ButtonStyle.secondary, label="Generate Model List", row=2)
+        async def generate_model_list(self, interaction, button):
+            next_select_menu = await self.bot.get_cog("Commands").model_setting(self.bot, self.settings_data, start=0)
+            view = discord.ui.View()
+            view.add_item(next_select_menu)
+            embed = discord.Embed(title=f"Setting for {next_select_menu.placeholder}", description="Choose an option.")
+            await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
 
     async def send_model_embed(self, interaction):
@@ -185,7 +145,6 @@ class Commands(commands.Cog):
             await interaction.followup.send(embed=embed, view=model_view_instance, ephemeral=True, file=image_file)
         else:
             await interaction.followup.send(embed=embed, view=model_view_instance, ephemeral=True)
-
 
 
     async def model_setting(self, bot, interaction, settings_data, start=0):
