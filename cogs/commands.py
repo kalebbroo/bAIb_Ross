@@ -8,6 +8,8 @@ import requests
 from typing import List
 import aiohttp
 import os
+import io
+import base64
 
 SWARM_URL = os.getenv('SWARM_URL')
 
@@ -16,18 +18,28 @@ class Commands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.session = aiohttp.ClientSession()
+        self.models = []
+        self.index = 0
+        self.settings_data = {}
 
     @app_commands.command(name="dream", description="Press ENTER to Generate an image")
     @app_commands.describe(ai_assistance='Want AI to rewrite prompt?', change_settings='Do you want to edit settings?')
     async def dream(self, interaction, ai_assistance: bool, change_settings: bool):
+        await interaction.response.defer()
         user_id = interaction.user.id
         Commands.user_settings[user_id] = {"ai_assistance": ai_assistance}
 
         if change_settings:
             settings_data = {}
             first_model, model_view = await self.model_setting(self.bot, interaction, settings_data, start=0)
-            embed = discord.Embed(title=f"Setting for {first_model['title']}", description="Choose an option.")
-            await interaction.response.send_message(embed=embed, view=model_view, ephemeral=True)
+            
+            # Initialize self.models and self.index if they are not already initialized
+            if not hasattr(self, 'models') or not self.models:
+                self.models = await self.get_model_list()
+            self.index = 0  # Or whatever index you want for the initial model
+
+            # Send the initial embed using the send_model_embed method
+            await self.send_model_embed(interaction)
 
         else:
             modal = self.Txt2imgModal(self.bot, interaction)
@@ -59,7 +71,10 @@ class Commands(commands.Cog):
                 for file in data.get("files", [])
             ]
             # Sort the model list by 'title'
-            model_list.sort(key=lambda x: (x['title'][0].isdigit(), int(''.join(filter(str.isdigit, x['title'].split()[0]))) if x['title'][0].isdigit() else x['title']))
+            #model_list.sort(key=lambda x: (x['title'][0].isdigit(), int(''.join(filter(str.isdigit, x['title'].split()[0]))) if x['title'][0].isdigit() else x['title']))
+            model_list.sort(key=lambda x: int(x['title'].split()[0].replace('.', '')))
+            titles = [model['title'] for model in model_list]
+            print(titles)
             
             return model_list
                     
@@ -80,23 +95,29 @@ class Commands(commands.Cog):
     async def on_interaction(self, interaction):
         if interaction.type == discord.InteractionType.component:
             button_id = interaction.data["custom_id"]
-            # Fetch the current list of models
-            current_models = await self.get_model_list()
-            models_length = len(current_models)
-            current_index = 0
+            
+            # Only fetch the model list if self.models is not already initialized
+            if not hasattr(self, 'models') or not self.models:
+                self.models = await self.get_model_list()
+            models_length = len(self.models)
+            # Only initialize self.index if it's not already initialized
+            if not hasattr(self, 'index'):
+                self.index = 0
 
             match button_id:
                 case "next_model":
                     await interaction.response.defer()
-                    current_index = self.update_model_index(current_index, models_length, direction='next')
+                    self.index = self.update_model_index(self.index, models_length, direction='next')
                     await self.send_model_embed(interaction)
+                    return  # Added return to exit the function after sending the embed
                 case "previous_model":
                     await interaction.response.defer()
-                    current_index = self.update_model_index(current_index, models_length, direction='previous')
+                    self.index = self.update_model_index(self.index, models_length, direction='previous')
                     await self.send_model_embed(interaction)
+                    return 
                 case "choose_model":
                     self.settings_data["Choose a Model"] = self.models[self.index]["name"]
-                    next_select_menu = await self.bot.get_cog("Commands").steps_setting(self.bot, self.settings_data, self.models)
+                    next_select_menu = self.bot.get_cog("Commands").steps_setting(self.bot, self.settings_data, self.models)
                     view = discord.ui.View()
                     view.add_item(next_select_menu)
                     embed = discord.Embed(title=f"Setting for {next_select_menu.placeholder}", description="Choose an option.")
@@ -133,23 +154,39 @@ class Commands(commands.Cog):
 
     async def send_model_embed(self, interaction):
         model = self.models[self.index]
-
         embed = discord.Embed(title=model.get("title", "N/A"), description=model.get("description", "N/A"), color=0x00ff00)
+        
+        image_file = None
+
         if model.get("preview_image"):
-            embed.set_thumbnail(url=model["preview_image"])
-            
-        # Add fields for model details to embed
+            base64_image_data = model.get("preview_image")
+
+            if base64_image_data.startswith('data:image/jpeg;base64,'):
+                base64_image_data = base64_image_data[len('data:image/jpeg;base64,'):]
+
+            # Decode the base64 string into bytes
+            image_bytes = base64.b64decode(base64_image_data)
+            # Create a discord.File object
+            image_file = discord.File(io.BytesIO(image_bytes), filename="preview_image.jpeg")
+            embed.set_image(url="attachment://preview_image.jpeg")  # Set the image in the embed
+
+        # Add other details to the embed as you were doing before
         embed.add_field(name="Name", value=model.get("name", "N/A"), inline=True)
         embed.add_field(name="Standard Width", value=model.get("standard_width", "N/A"), inline=True)
         embed.add_field(name="Standard Height", value=model.get("standard_height", "N/A"), inline=True)
         embed.add_field(name="Trigger Phrase", value=model.get("trigger_phrase", "N/A"), inline=False)
         embed.add_field(name="Usage Hint", value=model.get("usage_hint", "N/A"), inline=False)
-        
-        # Add a footer and a timestamp
         embed.set_footer(text="Use the buttons below to navigate between models.")
         embed.timestamp = datetime.utcnow()
-        
-        await interaction.response.edit_message(embed=embed, view=self)
+
+        model_view_instance = Commands.ModelView(self.bot, self.models, self.index, {})
+
+        if image_file:
+            await interaction.followup.send(embed=embed, view=model_view_instance, ephemeral=True, file=image_file)
+        else:
+            await interaction.followup.send(embed=embed, view=model_view_instance, ephemeral=True)
+
+
 
     async def model_setting(self, bot, interaction, settings_data, start=0):
         model_list = await self.get_model_list()

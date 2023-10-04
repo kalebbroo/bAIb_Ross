@@ -91,7 +91,7 @@ class Buttons(commands.Cog):
 
             # Get the timestamp from the message
             username = interaction.user.name
-            date_string, time_string = self.bot.image_timestamps[username]
+            #date_string, time_string = self.bot.image_timestamps[username]
 
             # Get the username and the first three words of the prompt
             prompt = interaction.client.payloads[str(interaction.user.id)]['prompt']
@@ -99,11 +99,12 @@ class Buttons(commands.Cog):
             prompt_string = "_".join(prompt_words)
 
             # Get the path to the recently generated images
-            image_folder_path = os.path.join("cached_images", date_string, time_string)
+            #image_folder_path = os.path.join("cached_images", date_string, time_string)
 
             match button_id:
                 case "choose_img":
                     await interaction.response.defer()
+                    image_folder_path = os.path.join("cached_images", username, prompt_string)
                     # Get the recently generated images
                     image_files = [os.path.join(image_folder_path, image_file) for image_file in os.listdir(image_folder_path)]
                     select_menu = self.ImageSelect(self.bot, image_files, self.payload)

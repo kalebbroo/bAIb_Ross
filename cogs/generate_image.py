@@ -85,7 +85,7 @@ class GenerateImage(commands.Cog):
             session_id=self.session_id if self.session_id else api_call.session_id,
             prompt=prompt,
             negative_prompt=negative_prompt,
-            model="Last Piece Core XL",
+            model="colossusProjectXLSFW_v10BakedVAEFP16",
             width=1024,
             height=1024,
             cfgscale=7,
