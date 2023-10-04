@@ -55,6 +55,7 @@ class APICalls(commands.Cog):
         return {k: v for k, v in base_payload.items() if v is not None}
 
     async def call_collect(self, interaction, payload):
+        print(f"Payload: {payload}")
         uri = f"ws://{self.address[7:]}/API/GenerateText2ImageWS"
         image_grid_cog = self.bot.get_cog("ImageGrid")
         try:
@@ -63,7 +64,7 @@ class APICalls(commands.Cog):
                 
                 prompt = payload.get("prompt", "No prompt")
                 negative = payload.get("negativeprompt", "No negative prompt")
-                message = await interaction.followup.send(content=f'Generating images for {interaction.user.mention} using\n**Prompt:** `{prompt}` \n**Negative:** `{negative}`')
+                #message = await interaction.followup.send(content=f'Generating images for {interaction.user.mention} using\n**Prompt:** `{prompt}` \n**Negative:** `{negative}`')
                 
                 while True:
                     try:

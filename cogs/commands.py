@@ -283,7 +283,6 @@ class Commands(commands.Cog):
                 lora=settings_data.get("Choose LORA"),
                 embedding=settings_data.get("Choose Embedding")
             )
-            payload.update({"ai_assistance": ai_assistance})
             print(f"Payload before create_img2img: {payload}")
 
             await interaction.followup.send(f"Creating image from prompt: {prompt}", ephemeral=True)
