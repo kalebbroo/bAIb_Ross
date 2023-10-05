@@ -288,7 +288,6 @@ class Commands(commands.Cog):
                     session_id, 
                     prompt=prompt, 
                     negative_prompt=negative,
-                    model="OfficialStableDiffusion/sd_xl_base_1.0.safetensors",
                 )
                 print(f"Payload before create_img2img: {payload}")
 

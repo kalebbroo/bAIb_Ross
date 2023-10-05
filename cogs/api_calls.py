@@ -30,7 +30,7 @@ class APICalls(commands.Cog):
 
     @staticmethod
     def create_payload(session_id, prompt=None, negative_prompt=None, images=4,
-                        donotsave=True, model=None, 
+                        donotsave=True, model="OfficialStableDiffusion/sd_xl_base_1.0.safetensors", 
                         width=512, height=512, cfgscale=7,
                         steps=10, seed=-1, enableaitemplate=None, 
                         init_image=None, init_image_creativity=None, lora=None, embedding=None):
@@ -64,7 +64,7 @@ class APICalls(commands.Cog):
                 
                 prompt = payload.get("prompt", "No prompt")
                 negative = payload.get("negativeprompt", "No negative prompt")
-                #message = await interaction.followup.send(content=f'Generating images for {interaction.user.mention} using\n**Prompt:** `{prompt}` \n**Negative:** `{negative}`')
+                message = await interaction.followup.send(content=f'Generating images for {interaction.user.mention} using\n**Prompt:** `{prompt}` \n**Negative:** `{negative}`')
                 
                 while True:
                     try:
