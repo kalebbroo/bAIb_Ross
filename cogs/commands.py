@@ -87,7 +87,6 @@ class Commands(commands.Cog):
         async def send_model_embed(self, interaction):
             model = self.models[self.index]
             embed = discord.Embed(title=model.get("title", "N/A"), description=model.get("description", "N/A"), color=0x00ff00)
-            timestamp = interaction.message.created_at
             
             image_file = None
 
