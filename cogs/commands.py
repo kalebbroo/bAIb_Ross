@@ -5,7 +5,7 @@ from discord.ui import Button, View, Select, Modal, TextInput
 from discord import ButtonStyle, Interaction, ui
 from datetime import datetime
 import requests
-from typing import List
+from typing import List, Dict, Any
 import aiohttp
 import os
 import io
@@ -27,15 +27,15 @@ class Commands(commands.Cog):
 
         if change_settings:
             await interaction.response.defer()
-            settings_data = {}
+            settings_data: Dict[str, Any] = {}
             
             # Initialize self.models and self.index if they are not already initialized
             if not hasattr(self, 'models') or not self.models:
-                self.models = await self.get_model_list()
-            self.index = 0  # Or whatever index you want for the initial model
+                self.models: List[Dict[str, Any]] = await self.get_model_list()
+            self.index: int = 0  # Or whatever index you want for the initial model
 
             # Create an instance of ModelView
-            model_view_instance = Commands.ModelView(self.bot, self.models, self.index, {})
+            model_view_instance = Commands.ModelView(self.bot, self.models, self.index, settings_data)
             # Send the initial embed using the send_model_embed method of ModelView instance
             await model_view_instance.send_model_embed(interaction)
 
@@ -87,6 +87,7 @@ class Commands(commands.Cog):
         async def send_model_embed(self, interaction):
             model = self.models[self.index]
             embed = discord.Embed(title=model.get("title", "N/A"), description=model.get("description", "N/A"), color=0x00ff00)
+            timestamp = interaction.message.created_at
             
             image_file = None
 
@@ -108,12 +109,17 @@ class Commands(commands.Cog):
             embed.add_field(name="Trigger Phrase", value=model.get("trigger_phrase", "N/A"), inline=False)
             embed.add_field(name="Usage Hint", value=model.get("usage_hint", "N/A"), inline=False)
             embed.set_footer(text="Use the buttons below to navigate between models.")
-            embed.timestamp = datetime.utcnow()
+            #embed.timestamp = datetime.utcnow()
+
 
             if image_file:
-                await interaction.followup.send(embed=embed, view=self, ephemeral=True, file=image_file)
+                message = await interaction.followup.send(embed=embed, view=self, ephemeral=True, file=image_file)
+                embed.timestamp = interaction.message.created_at
+                await message.edit(embed=embed)
             else:
-                await interaction.followup.send(embed=embed, view=self, ephemeral=True)
+                message = await interaction.followup.send(embed=embed, view=self, ephemeral=True)
+                embed.timestamp = interaction.message.created_at
+                await message.edit(embed=embed)
 
 
         @discord.ui.button(style=discord.ButtonStyle.primary, label="Back", row=1)
@@ -251,47 +257,44 @@ class Commands(commands.Cog):
             negative = self.negative.value
             user_id = interaction.user.id
             settings_data = Commands.user_settings.get(user_id, {})
-            ai_assistance = settings_data.get("ai_assistance", False)
+            api_call = self.bot.get_cog("APICalls")
+            session_id = await api_call.get_session()
+
+            # Create the payload
+            payload = api_call.create_payload(
+                    session_id, 
+                    prompt=prompt, 
+                    negative_prompt=negative,
+                )
 
             # Convert the "Choose Size" option to actual width and height
             size_choice = settings_data.get("Choose Size")
             if size_choice:
                 width, height = map(int, size_choice.split('-'))
-            else:
-                width, height = None, None
-
-            api_call = self.bot.get_cog("APICalls")
-            session_id = await api_call.get_session()
+                # Update the payload with all user defined settings
+                payload.update({
+                    "width": width,
+                    "height": height,
+                    "cfgscale": settings_data.get("Choose CFG Scale"),
+                    "steps": settings_data.get("Choose Steps"),
+                    "lora": None,  # settings_data.get("Choose LORA"),
+                    "embedding": None,  # settings_data.get("Choose Embedding"),
+                    "model": settings_data.get("Choose a Model")
+                })
 
             # If AI assistance is enabled, rewrite the prompt and negative
+            ai_assistance = settings_data.get("ai_assistance", False)
             if ai_assistance:
                 print("AI assistance is enabled")
                 ai = self.bot.get_cog("AIPromptGenerator")
                 prompt, negative = await ai.rewrite_prompt(interaction, prompt, negative)
                 # Create the payload
-                payload = api_call.create_payload(
-                    session_id, 
-                    prompt=prompt, 
-                    negative_prompt=negative,
-                    model=settings_data.get("Choose a Model"),
-                    width=width,
-                    height=height,
-                    steps=settings_data.get("Choose Steps"),
-                    cfgscale=settings_data.get("Choose CFG Scale"),
-                    lora=settings_data.get("Choose LORA"),
-                    embedding=settings_data.get("Choose Embedding")
-                )
-            else:
-                print("AI assistance is disabled")
-                # Create the payload
-                payload = api_call.create_payload(
-                    session_id, 
-                    prompt=prompt, 
-                    negative_prompt=negative,
-                )
-                print(f"Payload before create_img2img: {payload}")
+                payload['prompt'] = prompt
+                payload['negative_prompt'] = negative
 
-                #await interaction.followup.send(f"Creating image from prompt: {prompt}", ephemeral=True)
+                await interaction.followup.send(f"Bots are speaking with bots. Please wait.", ephemeral=True)
+
+            # API call to generate image
             await api_call.call_collect(interaction, payload)
 
 async def setup(bot):
