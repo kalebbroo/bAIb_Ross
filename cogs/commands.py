@@ -111,7 +111,7 @@ class Commands(commands.Cog):
             embed.timestamp = interaction.created_at
 
             # Send the embed
-            await interaction.edit_original_response(embed=embed, view=self, ephemeral=True, file=image_file)
+            await interaction.followup.send(embed=embed, view=self, ephemeral=True, file=image_file)
 
 
         @discord.ui.button(style=discord.ButtonStyle.primary, label="Back", row=1)
