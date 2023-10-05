@@ -32,7 +32,7 @@ class Commands(commands.Cog):
             # Initialize self.models and self.index if they are not already initialized
             if not hasattr(self, 'models') or not self.models:
                 self.models: List[Dict[str, Any]] = await self.get_model_list()
-            self.index: int = 0  # Or whatever index you want for the initial model
+            self.index: int = 1  # Or whatever index you want for the initial model
 
             # Create an instance of ModelView
             model_view_instance = Commands.ModelView(self.bot, self.models, self.index, settings_data)
@@ -110,11 +110,8 @@ class Commands(commands.Cog):
             embed.set_footer(text="Use the buttons below to navigate between models.")
             embed.timestamp = interaction.created_at
 
-
-            if image_file:
-                await interaction.edit_original_response(embed=embed, view=self, ephemeral=True, file=image_file)
-            else:
-                await interaction.edit_original_response(embed=embed, view=self, ephemeral=True)
+            # Send the embed
+            await interaction.response.send_message(embed=embed, view=self, ephemeral=True, file=image_file)
 
 
         @discord.ui.button(style=discord.ButtonStyle.primary, label="Back", row=1)
