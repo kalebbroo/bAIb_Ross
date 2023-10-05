@@ -113,11 +113,11 @@ class Commands(commands.Cog):
 
             if image_file:
                 await interaction.followup.send(embed=embed, view=self, ephemeral=True, file=image_file)
-                embed.timestamp = datetime.utcnow()
-                await interaction.edit_original_response(embed=embed) 
+                embed.timestamp = interaction.created_at
+                await interaction.edit_original_response(embed=embed)
             else:
                 await interaction.followup.send(embed=embed, view=self, ephemeral=True)
-                embed.timestamp = datetime.utcnow()
+                embed.timestamp = interaction.created_at
                 await interaction.edit_original_response(embed=embed)
 
 
