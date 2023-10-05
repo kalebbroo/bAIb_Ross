@@ -108,17 +108,13 @@ class Commands(commands.Cog):
             embed.add_field(name="Trigger Phrase", value=model.get("trigger_phrase", "N/A"), inline=False)
             embed.add_field(name="Usage Hint", value=model.get("usage_hint", "N/A"), inline=False)
             embed.set_footer(text="Use the buttons below to navigate between models.")
-            #embed.timestamp = datetime.utcnow()
+            embed.timestamp = interaction.created_at
 
 
             if image_file:
-                await interaction.followup.send(embed=embed, view=self, ephemeral=True, file=image_file)
-                embed.timestamp = interaction.created_at
-                await interaction.edit_original_response(embed=embed)
+                await interaction.edit_original_response(embed=embed, view=self, ephemeral=True, file=image_file)
             else:
-                await interaction.followup.send(embed=embed, view=self, ephemeral=True)
-                embed.timestamp = interaction.created_at
-                await interaction.edit_original_response(embed=embed)
+                await interaction.edit_original_response(embed=embed, view=self, ephemeral=True)
 
 
         @discord.ui.button(style=discord.ButtonStyle.primary, label="Back", row=1)
