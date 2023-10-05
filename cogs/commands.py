@@ -260,32 +260,38 @@ class Commands(commands.Cog):
             else:
                 width, height = None, None
 
+            api_call = self.bot.get_cog("APICalls")
+            session_id = await api_call.get_session()
+
             # If AI assistance is enabled, rewrite the prompt and negative
             if ai_assistance:
                 print("AI assistance is enabled")
                 ai = self.bot.get_cog("AIPromptGenerator")
                 prompt, negative = await ai.rewrite_prompt(interaction, prompt, negative)
+                # Create the payload
+                payload = api_call.create_payload(
+                    session_id, 
+                    prompt=prompt, 
+                    negative_prompt=negative,
+                    model=settings_data.get("Choose a Model"),
+                    width=width,
+                    height=height,
+                    steps=settings_data.get("Choose Steps"),
+                    cfgscale=settings_data.get("Choose CFG Scale"),
+                    lora=settings_data.get("Choose LORA"),
+                    embedding=settings_data.get("Choose Embedding")
+                )
             else:
                 print("AI assistance is disabled")
+                # Create the payload
+                payload = api_call.create_payload(
+                    session_id, 
+                    prompt=prompt, 
+                    negative_prompt=negative,
+                )
+                print(f"Payload before create_img2img: {payload}")
 
-            # Create the payload
-            api_call = self.bot.get_cog("APICalls")
-            session_id = await api_call.get_session()
-            payload = api_call.create_payload(
-                session_id, 
-                prompt=prompt, 
-                negative_prompt=negative,
-                model=settings_data.get("Choose a Model"),
-                width=width,
-                height=height,
-                steps=settings_data.get("Choose Steps"),
-                cfgscale=settings_data.get("Choose CFG Scale"),
-                lora=settings_data.get("Choose LORA"),
-                embedding=settings_data.get("Choose Embedding")
-            )
-            print(f"Payload before create_img2img: {payload}")
-
-            await interaction.followup.send(f"Creating image from prompt: {prompt}", ephemeral=True)
+                #await interaction.followup.send(f"Creating image from prompt: {prompt}", ephemeral=True)
             await api_call.call_collect(interaction, payload)
 
 async def setup(bot):
