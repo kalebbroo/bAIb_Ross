@@ -26,7 +26,7 @@ class Commands(commands.Cog):
         Commands.user_settings[user_id] = {"ai_assistance": ai_assistance}
 
         if change_settings:
-            await interaction.response.defer()
+            await interaction.response.defer(ephemeral=True)
             settings_data: Dict[str, Any] = {}
             
             # Initialize self.models and self.index if they are not already initialized
@@ -111,7 +111,7 @@ class Commands(commands.Cog):
             embed.timestamp = interaction.created_at
 
             # Send the embed
-            await interaction.followup.send(embed=embed, view=self, ephemeral=True, file=image_file)
+            await interaction.edit_original_response(embed=embed, view=self, ephemeral=True, file=image_file)
 
 
         @discord.ui.button(style=discord.ButtonStyle.primary, label="Back", row=1)
