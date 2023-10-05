@@ -113,13 +113,13 @@ class Commands(commands.Cog):
 
 
             if image_file:
-                message = await interaction.followup.send(embed=embed, view=self, ephemeral=True, file=image_file)
+                await interaction.followup.send(embed=embed, view=self, ephemeral=True, file=image_file)
                 embed.timestamp = interaction.message.created_at
-                await message.edit(embed=embed)
+                await interaction.edit_original_response(embed=embed) 
             else:
-                message = await interaction.followup.send(embed=embed, view=self, ephemeral=True)
+                await interaction.followup.send(embed=embed, view=self, ephemeral=True)
                 embed.timestamp = interaction.message.created_at
-                await message.edit(embed=embed)
+                await interaction.edit_original_response(embed=embed)
 
 
         @discord.ui.button(style=discord.ButtonStyle.primary, label="Back", row=1)
