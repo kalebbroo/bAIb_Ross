@@ -220,9 +220,68 @@ class Commands(commands.Cog):
                     next_select_menu = self.next_setting(self.bot, self.settings_data, self.model_list)
                     view = discord.ui.View()
                     view.add_item(next_select_menu)
-                    embed = discord.Embed(title=f"Setting for {next_select_menu.placeholder}", description="Choose an option.")
+                    match self.placeholder:
+                        case "Choose Steps":
+                            embed = discord.Embed(
+                                title="Step Selection",
+                                description="""The 'Steps' setting controls the number of iterations 
+                                the algorithm will perform. A higher number generally means better 
+                                quality but will require more time to process.""",
+                                color=discord.Color.blue()
+                            )
+                            embed.set_image(url="https://i0.wp.com/blog.openart.ai/wp-content/uploads/2023/02/Screen-Shot-2023-02-13-at-5.11.28-PM.png?resize=1024%2C602&ssl=1")
+                            embed.add_field(name="Tip for Beginners", 
+                                            value="Start with a lower number of steps `10` to get quicker results, then increase for better quality.")
+
+                        case "Choose CFG Scale":
+                            embed = discord.Embed(
+                                title="CFG Scale Setting",
+                                description="""The 'CFG Scale' setting adjusts the scale of the 
+                                configuration. Different scales can produce different artistic effects.""",
+                                color=discord.Color.green()
+                            )
+                            embed.add_field(name="Tip for Beginners", 
+                                            value="Try different scales to explore various artistic effects.")
+
+                        case "Choose LORA":
+                            embed = discord.Embed(
+                                title="LORA Configuration",
+                                description="""LORA (Level of Realistic Artistry) is a setting that 
+                                influences how realistic the generated image will be.""",
+                                color=discord.Color.red()
+                            )
+                            embed.add_field(name="Tip for Beginners", 
+                                            value="If you're unsure, start with the default LORA setting.")
+
+                        case "Choose Embeddings":
+                            embed = discord.Embed(
+                                title="Embedding Options",
+                                description="""Embeddings are pre-trained data structures that the 
+                                algorithm uses to understand the content. Different embeddings can 
+                                produce different styles.""",
+                                color=discord.Color.purple()
+                            )
+                            embed.add_field(name="Tip for Beginners", 
+                                            value="Stick to the default embeddings when you're just starting out.")
+
+                        case "Choose Size":
+                            embed = discord.Embed(
+                                title="Image Size Selection",
+                                description="""This setting allows you to choose the dimensions of 
+                                the output image. Different sizes will have an impact on the processing 
+                                time and quality.""",
+                                color=discord.Color.orange()
+                            )
+                            embed.add_field(name="Tip for Beginners", 
+                                            value="Start with smaller sizes for faster results.")
+
+                    # Add common fields that appear in all embeds
+                    embed.add_field(name="Note", value="Remember, these settings will affect both the processing time and the output quality.")
+                    embed.set_footer(text="Use the menu below to make your selection, or press the 'skip' option.")
+
+                    # Send the embed
                     await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
-                else:
+                else: # Send the modal to enter prompt and negative
                     user_id = interaction.user.id
                     Commands.user_settings[user_id] = self.settings_data
                     modal = Commands.Txt2imgModal(self.bot, interaction)
