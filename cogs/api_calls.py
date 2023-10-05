@@ -31,7 +31,7 @@ class APICalls(commands.Cog):
     @staticmethod
     def create_payload(session_id, prompt=None, negative_prompt=None, images=4,
                         donotsave=True, model=None, 
-                        width=512, height=512, cfgscale=None,
+                        width=512, height=512, cfgscale=7,
                         steps=10, seed=-1, enableaitemplate=None, 
                         init_image=None, init_image_creativity=None, lora=None, embedding=None):
         base_payload = {
