@@ -133,7 +133,7 @@ class Commands(commands.Cog):
                             description="""The 'Steps' setting controls the number of iterations 
                             the algorithm will perform. A higher number generally means better 
                             quality but will require more time to process.""",
-                            color=discord.Color.blue()
+                            color=discord.Color.purple()
                         )
             embed.set_image(url="https://i0.wp.com/blog.openart.ai/wp-content/uploads/2023/02/Screen-Shot-2023-02-13-at-5.11.28-PM.png?resize=1024%2C602&ssl=1")
             embed.add_field(name="Tip for Beginners", 
@@ -227,7 +227,7 @@ class Commands(commands.Cog):
                 next_select_menu = await self.bot.get_cog("Commands").model_setting(self.bot, self.settings_data, start=self.start + 25)
                 view = discord.ui.View()
                 view.add_item(next_select_menu)
-                #embed = discord.Embed(title=f"Setting for {next_select_menu.placeholder}", description="Choose an option.")
+                embed = discord.Embed(title=f"Setting for {next_select_menu.placeholder}", description="Choose an option.")
                 await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
             else:
                 # Update settings_data with the current selected value
@@ -239,46 +239,60 @@ class Commands(commands.Cog):
                     case "Choose Steps":
                         embed = discord.Embed(
                             title="CFG Scale Setting",
-                            description="""How strongly to scale prompt input.
-                                        Higher CFG scales tend to produce more contrast, and lower CFG scales produce less contrast.
-                                        Too-high values can cause corrupted/burnt images, too-low can cause nonsensical images.
-                                        7 is a good baseline. Normal usages vary between 5 and 9.""",
-                            color=discord.Color.green()
+                            description="""This parameter can be seen as the “Creativity vs. Prompt” scale. Lower numbers give the AI more freedom to be creative, 
+                                            while higher numbers force it to stick more to the prompt.
+                            
+                                        CFG 2 - 6: Creative, but might be too distorted and not follow the prompt. Can be fun and useful for short prompts
+                                        CFG 7 - 10: Recommended for most prompts. Good balance between creativity and guided generation
+                                        CFG 10 - 15: When you're sure that your prompt is detailed and very clear on what you want the image to look like
+                                        CFG 16 - 20: Not generally recommended unless the prompt is well-detailed. Might affect coherence and quality
+                                        CFG >20: almost never usable""",
+                            color=discord.Color.purple()
                         )
+                        embed.set_image(url="https://i0.wp.com/blog.openart.ai/wp-content/uploads/2023/02/Screen-Shot-2023-02-13-at-5.25.57-PM.png?resize=768%2C213&ssl=1")
                         embed.add_field(name="Tip for Beginners", 
                                         value="Try different scales to explore various artistic effects.")
 
                     case "Choose CFG Scale":
                         embed = discord.Embed(
-                            title="LORA Configuration",
-                            description="""LORA (Level of Realistic Artistry) is a setting that 
-                            influences how realistic the generated image will be.""",
-                            color=discord.Color.red()
+                            title="LoRA Configuration",
+                            description="""LoRA stands for Low-Rank Adaptation. It allows you to use low-rank adaptation technology to quickly fine-tune diffusion models. 
+                            To put it in simple terms, the LoRA training model makes it easier to train Stable Diffusion on different concepts, 
+                            such as characters or a specific style. These trained models then can be exported and used by others in their own generations.
+                            You want a specific celeberity? Use a LoRA model trained on that celeberity. You want a specific style? Use a LoRA model trained on that style.
+                            
+                            SD 1.5 (512x512) LoRA can only be used with 1.5 models. SD XL (1024x1024) LoRA can only be used with XL models. Ask for more to be added!!""",
+                            color=discord.Color.purple()
                         )
+                        embed.set_image(url="https://techpp.com/wp-content/uploads/2022/10/how-to-train-stable-diffusion.jpg")
                         embed.add_field(name="Tip for Beginners", 
-                                        value="If you're unsure, start with the default LORA setting.")
+                                        value="If you're unsure, just skip this setting.")
 
                     case "Choose LORA":
                         embed = discord.Embed(
                             title="Embedding Options",
-                            description="""Embeddings are pre-trained data structures that the 
-                            algorithm uses to understand the content. Different embeddings can 
-                            produce different styles.""",
+                            description="""What is an Embedding?
+                            The embedding layer encodes inputs such as text prompts into low-dimensional vectors that map features of an object. 
+                            These vectors guide the Stable Diffusion model to produce images to match the user's input.
+                            Do you want specific poses or angles? Use a pose embedding. Do you want specific colors? Use a color embedding.
+                            Ask for more to be added!!""",
                             color=discord.Color.purple()
                         )
+                        embed.set_image(url="https://149868225.v2.pressablecdn.com/wp-content/uploads/2023/06/212048-1024x859.jpg")
                         embed.add_field(name="Tip for Beginners", 
-                                        value="Stick to the default embeddings when you're just starting out.")
+                                        value="If you're unsure, just skip this setting.")
 
                     case "Choose Embeddings":
                         embed = discord.Embed(
                             title="Image Size Selection",
                             description="""This setting allows you to choose the dimensions of 
                             the output image. Different sizes will have an impact on the processing 
-                            time and quality.""",
+                            time and quality. Please not depending on the model, you will not get good image results with all sizes.
+                            It is better to use the default size (1:1) and upscale an image you like.""",
                             color=discord.Color.orange()
                         )
                         embed.add_field(name="Tip for Beginners", 
-                                        value="Start with smaller sizes for faster results.")
+                                        value="Start with 1:1 so it will use the default size of the chosen model.")
 
                     # Prepare for the next setting
                 if self.next_setting:
