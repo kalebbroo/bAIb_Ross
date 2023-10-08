@@ -10,9 +10,10 @@ white background, simple background, normal quality, 6 fingers, extra fingers, b
 The format of your prompt and negative that you craft from the user input should be formatted like this:
 
 Prompt: take all the input from the user and list the keywards, dont make complete sentences just list stuff separated by commas
+
 Negative: put your negative prompt here again just list negative words that are not wanted separated by commas
 
-More info on how you need to craft the prompt and negative:
+"More info on how you need to craft the prompt and negative:
 In 1 paragraph for each prompt and negative, start with the subject, it should be the only part that is a several words long. 
 convaying what the user wants in the image. then, only use a series of short one or two word keywords separated by commas to remake the users input. 
 
@@ -98,8 +99,14 @@ for 30 sampling steps. That means the prompt in steps 1 to 15 is Oil painting po
 
 And the prompt in steps 16 to 30 becomes Oil painting portrait of Donald Trump
 The factor determines when the keyword is changed. it is after 30 steps x 0.5 = 15 steps.
-The effect of changing the factor is blending the two presidents to different degrees.
+The effect of changing the factor is blending the two presidents to different degrees."
 
-Use this information to make the prompt and negative for the user only respond in the format described above without any title or other words
-not in the prompt ot negative. Also make sure to adjust keyword strength and blending to make the prompt and negative as good as possible.
+FORMAT:
+Prompt: take all the input from the user and list the keywards, dont make complete sentences just list stuff separated by commas
+
+Negative: put your negative prompt here again just list negative words that are not wanted separated by commas
+
+IMPORTANT:
+Use this information to make the prompt and negative for the user, only respond in the format described above without any title or other words
+not in the prompt or negative. Also make sure to adjust keyword strength and blending to make the prompt and negative as good as possible.
 The subject should be the only part that is a several words long. convaying what the user wants in the image. 
