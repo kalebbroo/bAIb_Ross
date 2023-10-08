@@ -1,3 +1,4 @@
+from typing import Any, Dict, Optional
 from websockets.exceptions import ConnectionClosedOK, ConnectionClosedError
 from discord.ext import commands
 import websockets
@@ -10,16 +11,22 @@ import logging
 import aiohttp
 import os
 
-SWARM_URL = os.getenv('SWARM_URL')
+SWARM_URL = os.getenv('SWARM_URL')  # Get the SWARM URL from the environment variables
 
 class APICalls(commands.Cog):
-    def __init__(self, bot):
+    """A Cog for making API calls related to image generation."""
+    def __init__(self, bot: commands.Bot):
+        """Initialize the API Calls Cog."""
         self.bot = bot
         self.address = SWARM_URL
         self.session_id = ""
-        self.session = aiohttp.ClientSession()  # Create a session to reuse
+        self.session = aiohttp.ClientSession()  # Create a reusable session for API calls
 
-    async def get_session(self):
+    async def get_session(self) -> str:
+        """Get a new session ID from the API.
+        Returns:
+            The new session ID.
+        """
         async with self.session.post(f"{self.address}/API/GetNewSession", json={}) as response:
             if response.status != 200:
                 raise Exception(f"Failed to get session. HTTP Status Code: {response.status}, Response Content: {await response.text()}")
@@ -29,11 +36,33 @@ class APICalls(commands.Cog):
             return self.session_id
 
     @staticmethod
-    def create_payload(session_id, prompt=None, negative_prompt=None, images=4,
-                        donotsave=True, model="OfficialStableDiffusion/sd_xl_base_1.0.safetensors", 
-                        width=512, height=512, cfgscale=7,
-                        steps=10, seed=-1, enableaitemplate=None, 
-                        init_image=None, init_image_creativity=None, lora=None, embedding=None):
+    def create_payload(session_id: str, prompt: Optional[str] = None, negative_prompt: Optional[str] = None, 
+                       images: int = 4, donotsave: bool = True, model: str = "OfficialStableDiffusion/sd_xl_base_1.0.safetensors", 
+                       width: int = 512, height: int = 512, cfgscale: int = 7,
+                       steps: int = 10, seed: int = -1, enableaitemplate: Optional[Any] = None, 
+                       init_image: Optional[str] = None, init_image_creativity: Optional[float] = None, 
+                       lora: Optional[str] = None, embedding: Optional[str] = None) -> Dict:
+        """Create a payload for an API call.
+        Args:
+            session_id: The session ID for the API call.
+            prompt: The text prompt.
+            negative_prompt: The negative text prompt.
+            images: The number of images to generate.
+            donotsave: Whether to save the images or not.
+            model: The model to use for generation.
+            width: The width of the images.
+            height: The height of the images.
+            cfgscale: The configuration scale.
+            steps: The number of steps to generate.
+            seed: The seed for randomization.
+            enableaitemplate: Enable AI template (if any).
+            init_image: The initial image (if any).
+            init_image_creativity: The creativity level for the initial image.
+            lora: The LORA setting (if any).
+            embedding: The embedding (if any).
+        Returns:
+            The created payload.
+        """
         base_payload = {
             "session_id": session_id,
             "images": images,
@@ -54,10 +83,17 @@ class APICalls(commands.Cog):
         }
         return {k: v for k, v in base_payload.items() if v is not None}
 
-    async def call_collect(self, interaction, payload):
-        print(f"Payload: {payload}")
-        uri = f"ws://{self.address[7:]}/API/GenerateText2ImageWS"
-        image_grid_cog = self.bot.get_cog("ImageGrid")
+    async def call_collect(self, interaction: discord.Interaction, payload: Dict) -> None:
+        """Call the API and collect the generated images.
+        Args:
+            interaction: The Discord interaction that triggered this.
+            payload: The payload for the API call.
+        """
+        print(f"Payload: {payload}")  # Debugging line
+        uri = f"ws://{self.address[7:]}/API/GenerateText2ImageWS"  # WebSocket URI for the API
+        image_grid_cog = self.bot.get_cog("ImageGrid")  # Get the ImageGrid Cog
+
+        # Handling WebSocket connection and image generation
         try:
             async with websockets.connect(uri) as ws:
                 await ws.send(json.dumps(payload))
@@ -76,7 +112,9 @@ class APICalls(commands.Cog):
                         image_data = data.get('image', None)
                         error_data = data.get('error', None)
 
+                        # Handle different types of data received from the WebSocket
                         if preview_data:
+                            # Process preview image data
                             base64_str = preview_data.split('data:image/jpeg;base64,')[-1]
                             image_data = base64.b64decode(base64_str)
                             image = Image.open(BytesIO(image_data))
@@ -84,14 +122,15 @@ class APICalls(commands.Cog):
                             embed, file = await image_grid_cog.image_grid(image, interaction, is_preview=True, payload=payload)
                             await message.edit(content=f'Generating images for {interaction.user.mention} using\n**Prompt:** `{prompt}` \n**Negative:** `{negative}`',
                                                 embed=embed, attachments=[file])
-
                         elif error_data:
+                            # Log error and send error message
                             error_msg = f"Failed to generate image. Error: {error_data}"
                             logging.error(error_msg)
                             await interaction.followup.send(content=error_msg)
                             break
 
                         elif image_data:
+                            # Process final image data
                             base64_str = image_data.split('data:image/jpeg;base64,')[-1]
                             image = Image.open(BytesIO(base64.b64decode(base64_str)))
 
@@ -104,7 +143,9 @@ class APICalls(commands.Cog):
                     except Exception as e:
                         logging.error(f"An error occurred: {e}")
                         break
-        except (websockets.exceptions.ConnectionClosedOK, websockets.exceptions.ConnectionClosedError):
+
+        except (ConnectionClosedOK, ConnectionClosedError):
+            # Handle connection issues
             logging.warning("WebSocket connection closed. Attempting to reconnect...")
             new_session_id = await self.get_session()
             payload["session_id"] = new_session_id
@@ -112,6 +153,9 @@ class APICalls(commands.Cog):
         except Exception as e:
             logging.error(f"An error occurred: {e}")
 
-
-async def setup(bot):
+async def setup(bot: commands.Bot) -> None:
+    """Setup function to add the Cog to the bot.
+    Args:
+        bot: The Discord bot.
+    """
     await bot.add_cog(APICalls(bot))

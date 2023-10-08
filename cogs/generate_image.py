@@ -11,6 +11,8 @@ import discord
 import logging
 import aiohttp
 
+# THIS IS A TEST COG FOR THE NEW API WHOLE COG WILL BE DELETED ONCE THE NEW API IS IMPLEMENTED
+
 class GenerateImage(commands.Cog):
     def __init__(self, bot):
         self.bot = bot

@@ -7,7 +7,7 @@ from io import BytesIO
 from PIL import Image
 from datetime import datetime
 
-
+# TODO: WHOLE COG NEEDS TO BE REWRITTEN TO WORK WITH THE NEW API
 
 class Buttons(commands.Cog):
     def __init__(self, bot):

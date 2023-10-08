@@ -13,16 +13,29 @@ import base64
 
 SWARM_URL = os.getenv('SWARM_URL')
 
+# TODO: Maybe I need to break this up into 2 cogs??
+
 class Commands(commands.Cog):
-    user_settings = {}
-    def __init__(self, bot):
+    """Main commands for the bot."""
+    
+    # Store user settings in a class-level dictionary
+    user_settings: Dict[int, Dict[str, Any]] = {}
+
+    def __init__(self, bot: commands.Bot):
+        """Initialize the Commands cog."""
         self.bot = bot
-        self.session = aiohttp.ClientSession()
 
     @app_commands.command(name="dream", description="Press ENTER to Generate an image")
     @app_commands.describe(ai_assistance='Want AI to rewrite prompt?', change_settings='Do you want to edit settings?')
-    async def dream(self, interaction, ai_assistance: bool, change_settings: bool):
+    async def dream(self, interaction: discord.Interaction, ai_assistance: bool, change_settings: bool):
+        """Handle the /dream command.
+        Args:
+            interaction: The Discord interaction object.
+            ai_assistance: Whether to use AI for rewriting the prompt.
+            change_settings: Whether the user wants to change settings.
+        """
         user_id = interaction.user.id
+        # Store user settings
         Commands.user_settings[user_id] = {"ai_assistance": ai_assistance}
 
         if change_settings:
@@ -40,18 +53,26 @@ class Commands(commands.Cog):
             await model_view_instance.send_model_embed(interaction)
 
         else:
+            # Display the modal for text to image conversion
             modal = self.Txt2imgModal(self.bot, interaction)
             await interaction.response.send_modal(modal)
 
-    async def get_model_list(self):
+    async def get_model_list(self) -> List[Dict[str, Any]]:
+        """Fetch the list of available models from the API.
+        Returns:
+            A list of dictionaries containing model information.
+        """
         url = f"{SWARM_URL}/API/ListModels"
-        session_id = await self.bot.get_cog("APICalls").get_session()
+        api_cog = self.bot.get_cog("APICalls")  # Get a reference to the APICalls Cog
+        session_id = await api_cog.get_session()  # Use the get_session method from APICalls Cog
+        
         params = {
             "path": "",
             "depth": 2,
             "session_id": session_id
         }
-        async with self.session.post(url, json=params) as response:
+        # Use the session from APICalls Cog
+        async with api_cog.session.post(url, json=params) as response:
             if response.status != 200:
                 raise Exception(f"Failed to get model list. HTTP Status Code: {response.status}, Response Content: {await response.text()}")
             data = await response.json()
@@ -77,6 +98,11 @@ class Commands(commands.Cog):
             return model_list
 
     class ModelView(discord.ui.View):
+        """The buttons for navigating between models.
+        This view contains buttons for navigating to the previous model, selecting the current model,
+        navigating to the next model, and generating a list of available models. It allows users to 
+        interactively browse and select models in Discord.
+        """
         def __init__(self, bot, models, index, settings_data):
             super().__init__(timeout=180)
             self.bot = bot
@@ -113,6 +139,10 @@ class Commands(commands.Cog):
             # Send the embed
             await interaction.followup.send(embed=embed, view=self, ephemeral=True, file=image_file)
 
+        """The buttons for navigating between model embeds."""
+
+        # TODO: fix the code so the match case matches with the correct name of the setting
+        # TODO: add the logic for LoRA and Embeddings. Maybe remove Embeddings from the code or replace it with ControlNets. Not actually sure how either of those work yet.
 
         @discord.ui.button(style=discord.ButtonStyle.primary, label="Back", row=1)
         async def previous_model(self, interaction, button):
@@ -156,6 +186,12 @@ class Commands(commands.Cog):
             embed = discord.Embed(title=f"Setting for {next_select_menu.placeholder}", description="Choose an option.")
             await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
+    """The model settings logic for when the user is selecting settings.
+    
+    This part of the code manages the flow of selecting various settings for the model generation.
+    It handles the steps, CFG scale, LORA, embeddings, and image size, guiding the user through these
+    settings via interactive menus.
+    """
 
     async def model_setting(self, bot, interaction, settings_data, start=0):
         model_list = await self.get_model_list()
@@ -375,5 +411,10 @@ class Commands(commands.Cog):
             # API call to generate image
             await api_call.call_collect(interaction, payload)
 
-async def setup(bot):
+# The setup function to add the cog to the bot
+async def setup(bot: commands.Bot):
+    """Setup function to add the Cog to the bot.
+    Args:
+        bot: The Discord bot.
+    """
     await bot.add_cog(Commands(bot))
