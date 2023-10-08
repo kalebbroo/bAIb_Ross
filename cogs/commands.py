@@ -355,10 +355,10 @@ class Commands(commands.Cog):
             super().__init__(title="Enter Prompt")
             self.bot = bot
             self.prompt = TextInput(label='Enter your prompt', style=discord.TextStyle.paragraph,
-                                    default="""solo, firefighter, realistic, real life, looking at viewer, facing viewer, 
-                                            daenerys targaryen , middle shot,  
-                                            professional, high quality, amazing, rendered in maya, Junji Ito, Peter Elson,
-                                            masterpiece, highres,  4k, detailed background, festive, (vibrant:0.8)""",
+                                    default="""solo, realistic, real life, looking at viewer, facing viewer, 
+                                            daenerys targaryen , middle shot, professional, high quality, amazing, 
+                                            rendered in maya, Junji Ito, Peter Elson, masterpiece, highres,  4k, 
+                                            detailed background, festive, (vibrant:0.8)""",
                                     min_length=1, max_length=2000, required=True)
             self.negative = TextInput(label='Enter your negative', style=discord.TextStyle.paragraph,
                                    default="""naked, nipples, anime, cartoon, drawing, bad anatomy, bad hands, text, error, 
