@@ -89,14 +89,15 @@ class APICalls(commands.Cog):
             interaction: The Discord interaction that triggered this.
             payload: The payload for the API call.
         """
-        print(f"Payload: {payload}")  # Debugging line
+        #print(f"Payload: {payload}")  # Debugging line
         uri = f"ws://{self.address[7:]}/API/GenerateText2ImageWS"  # WebSocket URI for the API
         image_grid_cog = self.bot.get_cog("ImageGrid")  # Get the ImageGrid Cog
 
         # Handling WebSocket connection and image generation
         try:
-            async with websockets.connect(uri) as ws:
+            async with websockets.connect(uri, ping_interval=120, ping_timeout=210) as ws:
                 await ws.send(json.dumps(payload))
+                #print("Sent payload to WebSocket")
                 
                 prompt = payload.get("prompt", "No prompt")
                 negative = payload.get("negativeprompt", "No negative prompt")
@@ -105,6 +106,7 @@ class APICalls(commands.Cog):
                 while True:
                     try:
                         response_data = await ws.recv()
+                        #print(f"Received data: {response_data}")
                         data = json.loads(response_data)
                         
                         gen_progress = data.get('gen_progress', {})
@@ -114,6 +116,7 @@ class APICalls(commands.Cog):
 
                         # Handle different types of data received from the WebSocket
                         if preview_data:
+                            #print("Processing preview data...")
                             # Process preview image data
                             base64_str = preview_data.split('data:image/jpeg;base64,')[-1]
                             image_data = base64.b64decode(base64_str)
@@ -123,6 +126,7 @@ class APICalls(commands.Cog):
                             await message.edit(content=f'Generating images for {interaction.user.mention} using\n**Prompt:** `{prompt}` \n**Negative:** `{negative}`',
                                                 embed=embed, attachments=[file])
                         elif error_data:
+                            print(f"Received error data: {error_data}")
                             # Log error and send error message
                             error_msg = f"Failed to generate image. Error: {error_data}"
                             logging.error(error_msg)
@@ -130,6 +134,7 @@ class APICalls(commands.Cog):
                             break
 
                         elif image_data:
+                            print("Processing image data...")
                             # Process final image data
                             base64_str = image_data.split('data:image/jpeg;base64,')[-1]
                             image = Image.open(BytesIO(base64.b64decode(base64_str)))
@@ -139,12 +144,15 @@ class APICalls(commands.Cog):
                                                 embed=embed, attachments=[file])
 
                     except websockets.exceptions.ConnectionClosedOK:
+                        print("Connection closed OK")
                         break
                     except Exception as e:
                         logging.error(f"An error occurred: {e}")
+                        print(f"An exception occurred: {e}")
                         break
 
         except (ConnectionClosedOK, ConnectionClosedError):
+            print("Connection closed unexpectedly. Reconnecting...")
             # Handle connection issues
             logging.warning("WebSocket connection closed. Attempting to reconnect...")
             new_session_id = await self.get_session()
@@ -152,6 +160,7 @@ class APICalls(commands.Cog):
             await self.call_collect(interaction, payload)
         except Exception as e:
             logging.error(f"An error occurred: {e}")
+            print(f"An exception occurred: {e}")
 
 async def setup(bot: commands.Bot) -> None:
     """Setup function to add the Cog to the bot.

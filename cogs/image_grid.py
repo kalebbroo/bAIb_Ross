@@ -73,7 +73,7 @@ class ImageGrid(commands.Cog):
             self.current_quadrant += 1
 
         # Resize the grid image for quick Discord uploading (Optional)
-        new_size = tuple(int(dim * 0.15) for dim in self.grid_image.size)
+        new_size = tuple(int(dim * 0.45) for dim in self.grid_image.size)
         resized_grid_image = self.grid_image.resize(new_size)
 
         # Convert the PIL image to a Discord-friendly file
