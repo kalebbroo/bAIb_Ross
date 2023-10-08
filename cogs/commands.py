@@ -278,10 +278,10 @@ class Commands(commands.Cog):
                             description="""This parameter can be seen as the “Creativity vs. Prompt” scale. Lower numbers give the AI more freedom to be creative, 
                                             while higher numbers force it to stick more to the prompt.
                             
-                                        CFG 2 - 6: Creative, but might be too distorted and not follow the prompt. Can be fun and useful for short prompts
-                                        CFG 7 - 10: Recommended for most prompts. Good balance between creativity and guided generation
-                                        CFG 10 - 15: When you're sure that your prompt is detailed and very clear on what you want the image to look like
-                                        CFG 16 - 20: Not generally recommended unless the prompt is well-detailed. Might affect coherence and quality
+                                        CFG 2 - 4: Creative, but might be too distorted and not follow the prompt. Can be fun and useful for short prompts
+                                        CFG 5 - 8: Recommended for most prompts. Good balance between creativity and guided generation
+                                        CFG 9 - 10: When you're sure that your prompt is detailed and very clear on what you want the image to look like
+                                        CFG 11 - 20: Not generally recommended unless the prompt is well-detailed. Might affect coherence and quality
                                         CFG >20: almost never usable""",
                             color=discord.Color.purple()
                         )
@@ -355,12 +355,16 @@ class Commands(commands.Cog):
             super().__init__(title="Enter Prompt")
             self.bot = bot
             self.prompt = TextInput(label='Enter your prompt', style=discord.TextStyle.paragraph,
-                                    default=f'portrait of a frog wearing a crown, ((sitting on a lily pad)), pond, castle background, digital painting,'
-                                            f'hyperrealistic, deviantart, 8k, cinematic lighting, dramatic, low angle shot',
+                                    default="""solo, firefighter, realistic, real life, looking at viewer, facing viewer, 
+                                            daenerys targaryen , middle shot,  
+                                            professional, high quality, amazing, rendered in maya, Junji Ito, Peter Elson,
+                                            masterpiece, highres,  4k, detailed background, festive, (vibrant:0.8)""",
                                     min_length=1, max_length=2000, required=True)
             self.negative = TextInput(label='Enter your negative', style=discord.TextStyle.paragraph,
-                                   default=f'low resolution, bad quality, blurry, simple background, white background, plain background, normal quality,'
-                                           f'6 fingers, extra fingers, broken fingers, worst quality, 2D, pop-art, pixabay, normal focus, flat lighting, boring',
+                                   default="""naked, nipples, anime, cartoon, drawing, bad anatomy, bad hands, text, error, 
+                                            missing fingers, extra digit, extra ears, fewer digits, cropped, worst quality, 
+                                            low quality, normal quality, jpeg artifacts, signature, watermark, username, 
+                                            out of focus, deformed, amateur, morphing, lowres""",
                                            min_length=1, max_length=2000, required=True)
             self.add_item(self.prompt)
             self.add_item(self.negative)
