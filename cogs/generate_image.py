@@ -56,7 +56,7 @@ class GenerateImage(commands.Cog):
         await self.get_session(self.bot)
         await self.build_payload(self.bot, interaction, prompt, negative, image)
 
-    async def build_payload(self, bot, interaction, prompt: str, negative_prompt: str, init_img: str = None) -> None:
+    async def build_payload(self, bot, interaction, prompt: str, negativeprompt: str, init_img: str = None) -> None:
         """
         Creates an API payload based on user input and triggers the image generation process.
 
@@ -69,8 +69,8 @@ class GenerateImage(commands.Cog):
         :type interaction: Union[Context, SlashContext]
         :param prompt: The text prompt based on which the image will be generated.
         :type prompt: str
-        :param negative_prompt: Negative prompt for the image generation.
-        :type negative_prompt: str
+        :param negativeprompt: Negative prompt for the image generation.
+        :type negativeprompt: str
         :return: None
         """
         # Convert the image URL to base64 if provided
@@ -86,7 +86,7 @@ class GenerateImage(commands.Cog):
         payload = api_call.create_payload(
             session_id=self.session_id if self.session_id else api_call.session_id,
             prompt=prompt,
-            negative_prompt=negative_prompt,
+            negativeprompt=negativeprompt,
             model="OfficialStableDiffusion/sd_xl_base_1.0.safetensors",
             width=1024,
             height=1024,

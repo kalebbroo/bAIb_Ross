@@ -36,7 +36,7 @@ class APICalls(commands.Cog):
             return self.session_id
 
     @staticmethod
-    def create_payload(session_id: str, prompt: Optional[str] = None, negative_prompt: Optional[str] = None, 
+    def create_payload(session_id: str, prompt: Optional[str] = None, negativeprompt: Optional[str] = None, 
                        images: int = 4, donotsave: bool = True, model: str = "OfficialStableDiffusion/sd_xl_base_1.0.safetensors", 
                        width: int = 512, height: int = 512, cfgscale: int = 7,
                        steps: int = 10, seed: int = -1, enableaitemplate: Optional[Any] = None, 
@@ -46,7 +46,7 @@ class APICalls(commands.Cog):
         Args:
             session_id: The session ID for the API call.
             prompt: The text prompt.
-            negative_prompt: The negative text prompt.
+            negativeprompt: The negative text prompt.
             images: The number of images to generate.
             donotsave: Whether to save the images or not.
             model: The model to use for generation.
@@ -69,7 +69,7 @@ class APICalls(commands.Cog):
             "donotsave": donotsave,
             "seed": seed,
             "prompt": prompt,
-            "negativeprompt": negative_prompt,
+            "negativeprompt": negativeprompt,
             "model": model,
             "width": width,
             "height": height,

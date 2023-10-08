@@ -236,16 +236,27 @@ class Commands(commands.Cog):
             standard_width = 1024  # Default values
             standard_height = 1024
 
-        aspect_ratios = ["1:1", "4:3", "3:2", "16:9", "21:9", "8:5", "3:4", "2:3", "5:8", "9:16", "9:21"]
+        aspect_ratios = {
+            "1:1": "1:1 Square", 
+            "4:3": "4:3 Standard Landscape", 
+            "3:2": "3:2 Classic Landscape", 
+            "16:9": "16:9 Widescreen Landscape",
+            "21:9": "21:9 Ultra-Widescreen Landscape",
+            "8:5": "8:5 Landscape", 
+            "3:4": "3:4 Standard Portrait",
+            "2:3": "2:3 Classic Portrait",
+            "5:8": "5:8 Portrait",
+            "9:16": "9:16 Widescreen Portrait",
+            "9:21": "9:21 Ultra-Widescreen Portrait"
+        }
         size_values = {}
-        for aspect_ratio in aspect_ratios:
+        for aspect_ratio, label in aspect_ratios.items():
             width, height = self.scale_to_aspect_ratio(standard_width, standard_height, aspect_ratio)
-            size_values[aspect_ratio] = (width, height)
+            size_values[label] = (width, height)
 
-        size_options = [discord.SelectOption(label=label, value=f"{width}-{height}") for label, (width, height) in size_values.items()]
+        size_options = [discord.SelectOption(label=f"{label} ({width}x{height})", value=f"{width}-{height}") for label, (width, height) in size_values.items()]
         return Commands.SettingsSelect(bot, "Choose Size", size_options, None, settings_data)
-
-                
+                    
     class SettingsSelect(discord.ui.Select):
         def __init__(self, bot, placeholder, options, next_setting=None, settings_data=None, model_list=None, start=0):
             super().__init__(placeholder=placeholder, options=options, row=0)
@@ -338,7 +349,7 @@ class Commands(commands.Cog):
                 else:
                     # If there's no next setting send modal
                     user_id = interaction.user.id
-                    Commands.user_settings[user_id] = self.settings_data
+                    Commands.user_settings[user_id].update(self.settings_data)
                     modal = Commands.Txt2imgModal(self.bot, interaction)
                     await interaction.response.send_modal(modal)
                     return
@@ -382,7 +393,7 @@ class Commands(commands.Cog):
             payload = api_call.create_payload(
                     session_id, 
                     prompt=prompt, 
-                    negative_prompt=negative,
+                    negativeprompt=negative,
                 )
 
             # Convert the "Choose Size" option to actual width and height
@@ -408,7 +419,7 @@ class Commands(commands.Cog):
                 prompt, negative = await ai.rewrite_prompt(interaction, prompt, negative)
                 # Create the payload
                 payload['prompt'] = prompt
-                payload['negative_prompt'] = negative
+                payload['negativeprompt'] = negative
 
                 await interaction.followup.send(f"Bots are speaking with bots. Please wait.", ephemeral=True)
 

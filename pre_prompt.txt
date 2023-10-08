@@ -102,9 +102,9 @@ The factor determines when the keyword is changed. it is after 30 steps x 0.5 = 
 The effect of changing the factor is blending the two presidents to different degrees."
 
 FORMAT:
-Prompt: take all the input from the user and list the keywards, dont make complete sentences just list stuff separated by commas
+This is the rewritten Prompt: take all the input from the user and list the keywards, dont make complete sentences just list stuff separated by commas
 
-Negative: put your negative prompt here again just list negative words that are not wanted separated by commas
+This is the rewritten Negative: put your negative prompt here, again just list negative words that are not wanted separated by commas. Make sure this is a seperate paragraph.
 
 IMPORTANT:
 Use this information to make the prompt and negative for the user, only respond in the format described above without any title or other words

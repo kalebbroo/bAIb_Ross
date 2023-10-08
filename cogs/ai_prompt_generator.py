@@ -35,13 +35,19 @@ class AIPromptGenerator(commands.Cog):
             A tuple containing the rewritten prompt and negative prompt.
         """
         model_list = self.openai.Model.list()  # Retrieve the list of available models (for debugging)
-        print(f"Model List: {[model['id'] for model in model_list['data']]}") # Print the list of available models (for debugging)
+        print(f"\nModel List: {[model['id'] for model in model_list['data']]}\n\n") # Print the list of available models (for debugging)
         
-        p_n = prompt + negative
+        # Add 'Prompt:' and 'Negative:' to user's original prompt and negative
+        user_prompt = f"Prompt: {prompt}"
+        user_negative = f"Negative: {negative}"
+        
+        # Combine the modified prompt and negative into one string
+        p_n = f"{user_prompt}\n\n{user_negative}"
+        print(f"Debug: p_n = {p_n}\n\n")
 
         # Make an API call to rewrite the prompt
         response = self.openai.ChatCompletion.create(
-            model="gpt-3.5-turbo-16k-0613",
+            model="gpt-3.5-turbo-0301",
             messages=[
                 {"role": "system", "content": self.pre_prompt},  # Pre-prompt
                 {"role": "user", "content": p_n},  # User's prompt and negative
@@ -49,18 +55,24 @@ class AIPromptGenerator(commands.Cog):
             max_tokens=2000,
             temperature=0.7,
         )
-        # Error handling for the API response
-        if 'choices' not in response or not response['choices']:
-            await interaction.channel.send("Failed to rewrite the prompt.")
-            return None, None
+        # After getting the API response
+        prompt_text = response['choices'][0]['message']['content'].strip()
+        print(f"Debug: prompt_text = {prompt_text}\n\n")
+        
+        # Split the text into 'prompt' and 'negative'
+        prompt_parts = prompt_text.split("This is the rewritten Negative:")
+        
+        if len(prompt_parts) == 2:
+            # Extract the two parts and remove the headers
+            prompt, negative = map(str.strip, prompt_parts)
+            prompt = prompt.replace("This is the rewritten Prompt:", "").strip()
+        else:
+            # Handle cases where splitting didn't work as expected
+            print(f"Debug: Splitting failed, prompt_parts = {prompt_parts}\n")
+            prompt, negative = None, None
 
-        prompt_text = response['choices'][0]['message']['content'].strip()  # Extract the rewritten prompt
-        prompt_parts = prompt_text.split("Negative:")  # Split it into prompt and negative parts
-
-        # Extract and return prompt and negative, with a fallback for missing negative
-        prompt = prompt_parts[0].strip()
-        negative = prompt_parts[1].strip() if len(prompt_parts) > 1 else "bad quality"
-
+        print(f"Debug: returned prompt = {prompt}\n\n")
+        print(f"Debug: returned negative = {negative}\n\n")
         return prompt, negative
 
 async def setup(bot: commands.Bot) -> None:
