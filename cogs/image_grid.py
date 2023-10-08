@@ -1,8 +1,10 @@
 from typing import List, Tuple, Dict
-from PIL import Image
-from io import BytesIO
-import discord
 from discord.ext import commands
+from datetime import datetime
+from io import BytesIO
+from PIL import Image
+import discord
+import os
 
 class ImageGrid(commands.Cog):
     """A class for generating the image grid."""
@@ -12,7 +14,7 @@ class ImageGrid(commands.Cog):
         self.current_quadrant = 0  # To keep track of the current quadrant (0 to 3)
         self.coordinates = []  # To store coordinates for each quadrant
 
-    def initialize_grid(self, image_size: Tuple[int, int] = (1024, 1024)) -> None:
+    def initialize_grid(self, image_size: Tuple[int, int]) -> None:
         """Initialize the image grid with a given image size.
         Args:
             image_size: The size of each individual image in the grid.
@@ -43,13 +45,19 @@ class ImageGrid(commands.Cog):
         Returns:
             A tuple containing the Discord embed and file.
         """
+        # Dynamically resize the new image based on the payload This is needed because preview images are smaller.
+        # TODO: Make this more efficient by only running it IF the image is a preview
+        width = payload.get('width', 1024)
+        height = payload.get('height', 1024)
+        new_image = new_image.resize((width, height))
+
         # Reset the quadrant if it exceeds the maximum
         if self.current_quadrant >= 4:
             self.current_quadrant = 0
 
         # Initialize the grid if it doesn't exist or we're back to the first quadrant
         if not hasattr(self, 'grid_image') or self.current_quadrant == 0:
-            self.initialize_grid()
+            self.initialize_grid((width, height))
 
         # Get the coordinates for the current quadrant
         x, y = self.coordinates[self.current_quadrant]
@@ -58,9 +66,6 @@ class ImageGrid(commands.Cog):
         border_size = 25  # Border size in pixels
         border_color = 'yellow' if is_preview else 'green'  # Border color based on whether it's a preview or not
 
-        # Resize the new image to fit the grid. Preview images were smaller
-        new_image = new_image.resize((1024, 1024))
-
         # Add a border to the new image
         bordered_image = Image.new('RGB', (new_image.size[0] + 2 * border_size, new_image.size[1] + 2 * border_size), border_color)
         bordered_image.paste(new_image, (border_size, border_size))
@@ -68,9 +73,23 @@ class ImageGrid(commands.Cog):
         # Paste the new image into the grid
         self.grid_image.paste(bordered_image, (x - border_size, y - border_size))
 
-        # Increment the current quadrant for the next image if this is not a preview
+        # Save the final images to disk
         if not is_preview:
+            # Increment the current quadrant for the next image
             self.current_quadrant += 1
+            # Save the final images to disk
+            username = interaction.user.name
+            date_str = datetime.now().strftime("%Y-%m-%d")
+            time_str = datetime.now().strftime("%H-%M-%S")
+            prompt_words = payload.get('prompt', '').split()[:3]
+            folder_name = f"images/{username}/{date_str}"
+
+            # Create the directory if it doesn't exist
+            os.makedirs(folder_name, exist_ok=True)
+
+            # Save the image
+            image_path = os.path.join(folder_name, f"{'-'.join(prompt_words)}-{time_str}.jpg")
+            new_image.save(image_path)
 
         # Resize the grid image for quick Discord uploading (Optional)
         new_size = tuple(int(dim * 0.45) for dim in self.grid_image.size)

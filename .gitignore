@@ -402,3 +402,6 @@ config.py
 
 # Environment variable file
 .env
+
+# images folder
+/images/
