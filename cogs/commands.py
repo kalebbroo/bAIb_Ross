@@ -37,20 +37,17 @@ class Commands(commands.Cog):
             change_settings: Whether the user wants to change settings.
         """
         user_id = str(interaction.user.id)  # Convert user ID to string
-        application_id = interaction.application_id
 
-        # Create a unique ID
-        unique_id = f"{application_id}_{user_id}"
-
-        # Initialize user settings with unique_id as the key
-        if unique_id not in Commands.user_settings:
-            Commands.user_settings[unique_id] = {
-                "unique_id": unique_id, 
+        # Initialize user settings with user_id as the key
+        if user_id not in Commands.user_settings:
+            Commands.user_settings[user_id] = {
                 "ai_assistance": ai_assistance,
-                "user_id": user_id,
+                "change_settings": change_settings,
+                "payload": {},
                 "settings_data": {}
             }
-        Commands.user_settings[unique_id]["ai_assistance"] = ai_assistance
+        Commands.user_settings[user_id]["ai_assistance"] = ai_assistance
+        Commands.user_settings[user_id]["change_settings"] = change_settings
         print(f"Ai Assistance right after cmd: {ai_assistance}")
 
         if change_settings:
@@ -60,7 +57,7 @@ class Commands(commands.Cog):
                 self.models: List[Dict[str, Any]] = await self.get_model_list()
             self.index: int = 1  # Or whatever index you want for the initial model
             
-            settings_data = Commands.user_settings[unique_id]["settings_data"]
+            settings_data = Commands.user_settings[user_id]["settings_data"]
             # Create an instance of ModelView
             model_view_instance = Commands.ModelView(self.bot, self.models, self.index, settings_data)
             # Send the initial embed using the send_model_embed method of ModelView instance
@@ -68,7 +65,7 @@ class Commands(commands.Cog):
 
         else:
             # Display the modal for text to image conversion
-            modal = self.Txt2imgModal(self.bot, interaction, unique_id)
+            modal = self.Txt2imgModal(self.bot, interaction)
             await interaction.response.send_modal(modal)
 
     async def get_model_list(self) -> List[Dict[str, Any]]:
@@ -362,10 +359,8 @@ class Commands(commands.Cog):
                     view.add_item(next_select_menu)
                 else:
                     # If there's no next setting send modal
-                    unique_id = str(interaction.application_id) + "_" + str(interaction.user.id)
-                    #unique_id = Commands.user_settings[self.settings_data["unique_id"]]["unique_id"]
-
-                    Commands.user_settings[unique_id]["settings_data"].update(self.settings_data)
+                    user_id = str(interaction.user.id)  # Convert user ID to string
+                    Commands.user_settings[user_id]["settings_data"].update(self.settings_data)
                     modal = Commands.Txt2imgModal(self.bot, interaction)
                     await interaction.response.send_modal(modal)
                     return
@@ -378,10 +373,9 @@ class Commands(commands.Cog):
                 await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
     class Txt2imgModal(Modal):
-        def __init__(self, bot, interaction, unique_id=None):
+        def __init__(self, bot, interaction):
             super().__init__(title="Enter Prompt")
             self.bot = bot
-            self.unique_id = unique_id
             self.prompt = TextInput(label='Enter your prompt', style=discord.TextStyle.paragraph,
                                     default="""solo, realistic, real life, looking at viewer, facing viewer, 
                                             daenerys targaryen , middle shot, professional, high quality, amazing, 
@@ -402,7 +396,7 @@ class Commands(commands.Cog):
             prompt = self.prompt.value
             negative = self.negative.value
             user_id = interaction.user.id
-            settings_data = Commands.user_settings.get(self.unique_id, {}).get("settings_data", {})
+            settings_data = Commands.user_settings.get(user_id, {}).get("settings_data", {})
 
             print(f"Debug: settings_data is {settings_data}")  # Debugging line
 
@@ -411,8 +405,7 @@ class Commands(commands.Cog):
 
             # Create the payload
             payload = api_call.create_payload(
-                    session_id, 
-                    unique_id=self.unique_id,
+                    session_id,
                     prompt=prompt, 
                     negativeprompt=negative,
                 )
@@ -431,7 +424,7 @@ class Commands(commands.Cog):
                     "model": settings_data.get("Choose a Model")
                 })
 
-            ai_assistance = Commands.user_settings.get(self.unique_id, {}).get("ai_assistance", False)
+            ai_assistance = Commands.user_settings.get(user_id, {}).get("ai_assistance", False)
 
             print(f"Debug: ai_assistance is {ai_assistance}")  # Debugging line
 

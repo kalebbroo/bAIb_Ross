@@ -21,7 +21,8 @@ class APICalls(commands.Cog):
         self.address = SWARM_URL
         self.session_id = ""
         self.session = aiohttp.ClientSession()  # Create a reusable session for API calls
-        self.image_paths = {}  # To store image paths, indexed by user ID. Used for button logic.
+        self.image_paths: Dict[str, str] = {}  # To store image paths, indexed by user ID. Used for button logic.
+
 
     async def get_session(self) -> str:
         """Get a new session ID from the API.
@@ -39,7 +40,7 @@ class APICalls(commands.Cog):
     @staticmethod
     def create_payload(session_id: str, prompt: Optional[str] = None, negativeprompt: Optional[str] = None, 
                        images: int = 4, donotsave: bool = True, model: str = "OfficialStableDiffusion/sd_xl_base_1.0.safetensors", 
-                       width: int = 512, height: int = 512, cfgscale: int = 7, unique_id: Optional[str] = None,
+                       width: int = 512, height: int = 512, cfgscale: int = 7,
                        steps: int = 20, seed: int = -1, enableaitemplate: Optional[Any] = None, 
                        init_image: Optional[str] = None, init_image_creativity: Optional[float] = None, 
                        lora: Optional[str] = None, embedding: Optional[str] = None) -> Dict:
@@ -81,7 +82,6 @@ class APICalls(commands.Cog):
             "init_image_creativity": init_image_creativity,
             "lora": lora,
             "embedding": embedding,
-            "unique_id": unique_id
         }
         return {k: v for k, v in base_payload.items() if v is not None}
 
