@@ -105,6 +105,7 @@ class APICalls(commands.Cog):
                 negative = payload.get("negativeprompt", "No negative prompt")
                 message = await interaction.followup.send(content=f'Generating images for {interaction.user.mention} using\n**Prompt:** `{prompt}` \n**Negative:** `{negative}`')
                 message_id = message.id 
+                print(f"Message ID call_collect: {message_id}")
                 
                 while True:
                     try:

@@ -15,11 +15,12 @@ class Buttons(commands.Cog):
     """Buttons for the image grid embed"""
 
     class ImageButtons(View):
-        def __init__(self, bot, interaction, payload):
+        def __init__(self, bot, interaction, payload, message_id=None):
             super().__init__(timeout=180)
             self.bot = bot
             self.payload = payload
-            self.unique_id = payload.get('unique_id')
+            self.message_id = message_id
+
 
         @discord.ui.button(style=ButtonStyle.success, label="Regenerate", custom_id="regenerate", row=1)
         async def regenerate(self, interaction, button):
@@ -30,9 +31,7 @@ class Buttons(commands.Cog):
         @discord.ui.button(style=ButtonStyle.primary, label="Upscale", custom_id="upscale", row=1)
         async def upscale(self, interaction, button):
             await interaction.response.defer()
-
-            message_id = interaction.message.id  # Get the message ID from the interaction
-            message_info = self.bot.get_cog('APICalls').message_data.get(message_id)  # Retrieve the stored info
+            message_info = self.bot.get_cog('APICalls').message_data.get(self.message_id)  # Retrieve the stored info
 
             if message_info:
                 payload = message_info.get('payload')
@@ -55,8 +54,7 @@ class Buttons(commands.Cog):
         @discord.ui.button(style=ButtonStyle.secondary, label="Generate From Source Image", custom_id="choose_img", row=2)
         async def choose_img(self, interaction, button):
             await interaction.response.defer()
-            message_id = interaction.message.id  # Get the message ID from the interaction
-            message_info = self.bot.get_cog('APICalls').message_data.get(message_id)  # Retrieve the stored info
+            message_info = self.bot.get_cog('APICalls').message_data.get(self.message_id)  # Retrieve the stored info
 
             if message_info:
                 payload = message_info.get('payload')

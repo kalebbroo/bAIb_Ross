@@ -79,7 +79,6 @@ class ImageGrid(commands.Cog):
             username = interaction.user.name
             date_str = datetime.now().strftime("%Y-%m-%d")
             #time_str = datetime.now().strftime("%H-%M-%S")
-            message_id = interaction.message.id
             prompt_words = payload.get('prompt', '').split()[:5]
             folder_name = f"images/{username}/{date_str}/{message_id}"
 
