@@ -35,7 +35,7 @@ class ImageGrid(commands.Cog):
             for col in range(grid_size)
         ]
 
-    async def image_grid(self, new_image: Image.Image, interaction, is_preview: bool, payload: Dict) -> Tuple[discord.Embed, discord.File]:
+    async def image_grid(self, new_image: Image.Image, interaction, is_preview: bool, payload: Dict, message_id=None) -> Tuple[discord.Embed, discord.File]:
         """Generate an image grid and return it along with an embed.
         Args:
             new_image: The new image to add to the grid.

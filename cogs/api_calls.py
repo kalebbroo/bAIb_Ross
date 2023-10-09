@@ -104,6 +104,7 @@ class APICalls(commands.Cog):
                 prompt = payload.get("prompt", "No prompt")
                 negative = payload.get("negativeprompt", "No negative prompt")
                 message = await interaction.followup.send(content=f'Generating images for {interaction.user.mention} using\n**Prompt:** `{prompt}` \n**Negative:** `{negative}`')
+                message_id = message.id 
                 
                 while True:
                     try:
@@ -124,7 +125,7 @@ class APICalls(commands.Cog):
                             image_data = base64.b64decode(base64_str)
                             image = Image.open(BytesIO(image_data))
 
-                            embed, file = await image_grid_cog.image_grid(image, interaction, is_preview=True, payload=payload)
+                            embed, file = await image_grid_cog.image_grid(image, interaction, is_preview=True, payload=payload, message_id=message_id)
                             await message.edit(content=f'Generating images for {interaction.user.mention} using\n**Prompt:** `{prompt}` \n**Negative:** `{negative}`',
                                                 embed=embed, attachments=[file])
                         elif error_data:
@@ -141,13 +142,12 @@ class APICalls(commands.Cog):
                             base64_str = image_data.split('data:image/jpeg;base64,')[-1]
                             image = Image.open(BytesIO(base64.b64decode(base64_str)))
 
-                            embed, file = await image_grid_cog.image_grid(image, interaction, is_preview=False, payload=payload)
+                            embed, file = await image_grid_cog.image_grid(image, interaction, is_preview=False, payload=payload, message_id=message_id)
 
                             # Create an instance of the ImageButtons view from the Buttons Cog
                             buttons_view = self.bot.get_cog('Buttons').ImageButtons(self.bot, interaction, payload)
                             await message.edit(content=f'Generating images for {interaction.user.mention} using\n**Prompt:** `{prompt}` \n**Negative:** `{negative}`',
                                                 embed=embed, attachments=[file], view=buttons_view)
-                            message_id = message.id  # Get the message ID from the sent message
 
                             # Store information in the dictionary
                             self.message_data[message_id] = {
