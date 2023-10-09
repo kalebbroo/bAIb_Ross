@@ -33,11 +33,14 @@ class Buttons(commands.Cog):
             await interaction.response.defer()
             message_info = self.bot.get_cog('APICalls').message_data.get(self.message_id)  # Retrieve the stored info
 
+            # Initialize image_files as an empty list
+            image_files = []
+
             if message_info:
                 payload = message_info.get('payload')
                 user_id = message_info.get('user_id')
                 image_files = message_info.get('image_files', [])
-            
+
             if not image_files:
                 await interaction.followup.send("No images found to upscale.", ephemeral=True)
                 return
@@ -56,15 +59,18 @@ class Buttons(commands.Cog):
             await interaction.response.defer()
             message_info = self.bot.get_cog('APICalls').message_data.get(self.message_id)  # Retrieve the stored info
 
+            # Initialize image_files as an empty list
+            image_files = []
+
             if message_info:
                 payload = message_info.get('payload')
                 user_id = message_info.get('user_id')
                 image_files = message_info.get('image_files', [])
-            
+
             if not image_files:
-                await interaction.followup.send("No images found.", ephemeral=True)
+                await interaction.followup.send("No images found to upscale.", ephemeral=True)
                 return
-            
+                        
             select_menu = self.ImageSelect(self.bot, image_files, self.payload)
             await interaction.channel.send("Select an image to generate more from.", view=select_menu)
 
