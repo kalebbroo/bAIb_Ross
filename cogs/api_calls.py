@@ -21,6 +21,7 @@ class APICalls(commands.Cog):
         self.address = SWARM_URL
         self.session_id = ""
         self.session = aiohttp.ClientSession()  # Create a reusable session for API calls
+        self.image_paths = {}  # To store image paths, indexed by user ID. Used for button logic.
 
     async def get_session(self) -> str:
         """Get a new session ID from the API.
@@ -38,8 +39,8 @@ class APICalls(commands.Cog):
     @staticmethod
     def create_payload(session_id: str, prompt: Optional[str] = None, negativeprompt: Optional[str] = None, 
                        images: int = 4, donotsave: bool = True, model: str = "OfficialStableDiffusion/sd_xl_base_1.0.safetensors", 
-                       width: int = 512, height: int = 512, cfgscale: int = 7,
-                       steps: int = 10, seed: int = -1, enableaitemplate: Optional[Any] = None, 
+                       width: int = 512, height: int = 512, cfgscale: int = 7, unique_id: Optional[str] = None,
+                       steps: int = 20, seed: int = -1, enableaitemplate: Optional[Any] = None, 
                        init_image: Optional[str] = None, init_image_creativity: Optional[float] = None, 
                        lora: Optional[str] = None, embedding: Optional[str] = None) -> Dict:
         """Create a payload for an API call.
@@ -79,7 +80,8 @@ class APICalls(commands.Cog):
             "init_image": init_image,
             "init_image_creativity": init_image_creativity,
             "lora": lora,
-            "embedding": embedding
+            "embedding": embedding,
+            "unique_id": unique_id
         }
         return {k: v for k, v in base_payload.items() if v is not None}
 
@@ -140,8 +142,11 @@ class APICalls(commands.Cog):
                             image = Image.open(BytesIO(base64.b64decode(base64_str)))
 
                             embed, file = await image_grid_cog.image_grid(image, interaction, is_preview=False, payload=payload)
+
+                            # Create an instance of the ImageButtons view from the Buttons Cog
+                            buttons_view = self.bot.get_cog('Buttons').ImageButtons(self.bot, interaction, payload)
                             await message.edit(content=f'Generating images for {interaction.user.mention} using\n**Prompt:** `{prompt}` \n**Negative:** `{negative}`',
-                                                embed=embed, attachments=[file])
+                                                embed=embed, attachments=[file], view=buttons_view)
 
                     except websockets.exceptions.ConnectionClosedOK:
                         print("Connection closed OK")

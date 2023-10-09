@@ -73,23 +73,25 @@ class ImageGrid(commands.Cog):
         # Paste the new image into the grid
         self.grid_image.paste(bordered_image, (x - border_size, y - border_size))
 
-        # Save the final images to disk
-        if not is_preview:
-            # Increment the current quadrant for the next image
-            self.current_quadrant += 1
             # Save the final images to disk
+        if not is_preview:
+            self.current_quadrant += 1
             username = interaction.user.name
             date_str = datetime.now().strftime("%Y-%m-%d")
-            time_str = datetime.now().strftime("%H-%M-%S")
-            prompt_words = payload.get('prompt', '').split()[:3]
-            folder_name = f"images/{username}/{date_str}"
+            #time_str = datetime.now().strftime("%H-%M-%S")
+            unique_id = payload.get('unique_id')  # Retrieve the unique_id from the payload
+            prompt_words = payload.get('prompt', '').split()[:5]
+            folder_name = f"images/{username}/{date_str}/{unique_id}"  # Include unique_id in the folder structure
 
-            # Create the directory if it doesn't exist
             os.makedirs(folder_name, exist_ok=True)
-
-            # Save the image
-            image_path = os.path.join(folder_name, f"{'-'.join(prompt_words)}-{time_str}.jpg")
+            image_path = os.path.join(folder_name, f"{'-'.join(prompt_words)}.jpg")
             new_image.save(image_path)
+
+            # Update the image_paths dictionary using unique_id
+            image_paths = self.bot.get_cog('APICalls').image_paths
+            if unique_id not in image_paths:
+                image_paths[unique_id] = []
+            image_paths[unique_id].append(image_path)
 
         # Resize the grid image for quick Discord uploading (Optional)
         new_size = tuple(int(dim * 0.45) for dim in self.grid_image.size)

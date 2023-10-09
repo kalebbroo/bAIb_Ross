@@ -18,12 +18,14 @@ SWARM_URL = os.getenv('SWARM_URL')
 class Commands(commands.Cog):
     """Main commands for the bot."""
     
-    # Store user settings in a class-level dictionary
-    user_settings: Dict[int, Dict[str, Any]] = {}
+    # Store settings in a class-level dictionary
+    user_settings: Dict[str, Dict[str, Any]] = {} 
 
     def __init__(self, bot: commands.Bot):
         """Initialize the Commands cog."""
         self.bot = bot
+
+    from typing import Dict, Any
 
     @app_commands.command(name="dream", description="Press ENTER to Generate an image")
     @app_commands.describe(ai_assistance='Want AI to rewrite prompt?', change_settings='Do you want to edit settings?')
@@ -34,19 +36,31 @@ class Commands(commands.Cog):
             ai_assistance: Whether to use AI for rewriting the prompt.
             change_settings: Whether the user wants to change settings.
         """
-        user_id = interaction.user.id
-        # Store user settings
-        Commands.user_settings[user_id] = {"ai_assistance": ai_assistance}
+        user_id = str(interaction.user.id)  # Convert user ID to string
+        application_id = interaction.application_id
+
+        # Create a unique ID
+        unique_id = f"{application_id}_{user_id}"
+
+        # Initialize user settings with unique_id as the key
+        if unique_id not in Commands.user_settings:
+            Commands.user_settings[unique_id] = {
+                "unique_id": unique_id, 
+                "ai_assistance": ai_assistance,
+                "user_id": user_id,
+                "settings_data": {}
+            }
+        Commands.user_settings[unique_id]["ai_assistance"] = ai_assistance
+        print(f"Ai Assistance right after cmd: {ai_assistance}")
 
         if change_settings:
             await interaction.response.defer(ephemeral=True)
-            settings_data: Dict[str, Any] = {}
-            
             # Initialize self.models and self.index if they are not already initialized
             if not hasattr(self, 'models') or not self.models:
                 self.models: List[Dict[str, Any]] = await self.get_model_list()
             self.index: int = 1  # Or whatever index you want for the initial model
-
+            
+            settings_data = Commands.user_settings[unique_id]["settings_data"]
             # Create an instance of ModelView
             model_view_instance = Commands.ModelView(self.bot, self.models, self.index, settings_data)
             # Send the initial embed using the send_model_embed method of ModelView instance
@@ -54,7 +68,7 @@ class Commands(commands.Cog):
 
         else:
             # Display the modal for text to image conversion
-            modal = self.Txt2imgModal(self.bot, interaction)
+            modal = self.Txt2imgModal(self.bot, interaction, unique_id)
             await interaction.response.send_modal(modal)
 
     async def get_model_list(self) -> List[Dict[str, Any]]:
@@ -348,8 +362,10 @@ class Commands(commands.Cog):
                     view.add_item(next_select_menu)
                 else:
                     # If there's no next setting send modal
-                    user_id = interaction.user.id
-                    Commands.user_settings[user_id].update(self.settings_data)
+                    unique_id = str(interaction.application_id) + "_" + str(interaction.user.id)
+                    #unique_id = Commands.user_settings[self.settings_data["unique_id"]]["unique_id"]
+
+                    Commands.user_settings[unique_id]["settings_data"].update(self.settings_data)
                     modal = Commands.Txt2imgModal(self.bot, interaction)
                     await interaction.response.send_modal(modal)
                     return
@@ -362,9 +378,10 @@ class Commands(commands.Cog):
                 await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
     class Txt2imgModal(Modal):
-        def __init__(self, bot, interaction):
+        def __init__(self, bot, interaction, unique_id=None):
             super().__init__(title="Enter Prompt")
             self.bot = bot
+            self.unique_id = unique_id
             self.prompt = TextInput(label='Enter your prompt', style=discord.TextStyle.paragraph,
                                     default="""solo, realistic, real life, looking at viewer, facing viewer, 
                                             daenerys targaryen , middle shot, professional, high quality, amazing, 
@@ -385,13 +402,17 @@ class Commands(commands.Cog):
             prompt = self.prompt.value
             negative = self.negative.value
             user_id = interaction.user.id
-            settings_data = Commands.user_settings.get(user_id, {})
+            settings_data = Commands.user_settings.get(self.unique_id, {}).get("settings_data", {})
+
+            print(f"Debug: settings_data is {settings_data}")  # Debugging line
+
             api_call = self.bot.get_cog("APICalls")
             session_id = await api_call.get_session()
 
             # Create the payload
             payload = api_call.create_payload(
                     session_id, 
+                    unique_id=self.unique_id,
                     prompt=prompt, 
                     negativeprompt=negative,
                 )
@@ -400,7 +421,6 @@ class Commands(commands.Cog):
             size_choice = settings_data.get("Choose Size")
             if size_choice:
                 width, height = map(int, size_choice.split('-'))
-                # Update the payload with all user defined settings
                 payload.update({
                     "width": width,
                     "height": height,
@@ -411,13 +431,14 @@ class Commands(commands.Cog):
                     "model": settings_data.get("Choose a Model")
                 })
 
-            # If AI assistance is enabled, rewrite the prompt and negative
-            ai_assistance = settings_data.get("ai_assistance", False)
-            if ai_assistance:
-                print("AI assistance is enabled")
+            ai_assistance = Commands.user_settings.get(self.unique_id, {}).get("ai_assistance", False)
+
+            print(f"Debug: ai_assistance is {ai_assistance}")  # Debugging line
+
+            if ai_assistance:  # Checking for True explicitly
+                print("AI assistance is enabled")  # Debugging line
                 ai = self.bot.get_cog("AIPromptGenerator")
                 prompt, negative = await ai.rewrite_prompt(interaction, prompt, negative)
-                # Create the payload
                 payload['prompt'] = prompt
                 payload['negativeprompt'] = negative
 
@@ -425,6 +446,7 @@ class Commands(commands.Cog):
 
             # API call to generate image
             await api_call.call_collect(interaction, payload)
+
 
 # The setup function to add the cog to the bot
 async def setup(bot: commands.Bot):
