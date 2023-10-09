@@ -395,7 +395,7 @@ class Commands(commands.Cog):
             await interaction.response.defer()
             prompt = self.prompt.value
             negative = self.negative.value
-            user_id = interaction.user.id
+            user_id = str(interaction.user.id)
             settings_data = Commands.user_settings.get(user_id, {}).get("settings_data", {})
 
             print(f"Debug: settings_data is {settings_data}")  # Debugging line
