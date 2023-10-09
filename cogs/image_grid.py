@@ -79,19 +79,22 @@ class ImageGrid(commands.Cog):
             username = interaction.user.name
             date_str = datetime.now().strftime("%Y-%m-%d")
             #time_str = datetime.now().strftime("%H-%M-%S")
-            unique_id = payload.get('unique_id')  # Retrieve the unique_id from the payload
+            message_id = interaction.message.id
             prompt_words = payload.get('prompt', '').split()[:5]
-            folder_name = f"images/{username}/{date_str}/{unique_id}"  # Include unique_id in the folder structure
+            folder_name = f"images/{username}/{date_str}/{message_id}"
 
             os.makedirs(folder_name, exist_ok=True)
             image_path = os.path.join(folder_name, f"{'-'.join(prompt_words)}.jpg")
             new_image.save(image_path)
 
+            # Access the message_data dictionary
+            message_data = self.bot.get_cog('APICalls').message_data
+
             # Update the image_paths dictionary using unique_id
-            image_paths = self.bot.get_cog('APICalls').image_paths
-            if unique_id not in image_paths:
-                image_paths[unique_id] = []
-            image_paths[unique_id].append(image_path)
+            if message_id in message_data:
+                if 'image_paths' not in message_data[message_id]:
+                    message_data[message_id]['image_paths'] = []
+                message_data[message_id]['image_paths'].append(image_path)
 
         # Resize the grid image for quick Discord uploading (Optional)
         new_size = tuple(int(dim * 0.45) for dim in self.grid_image.size)

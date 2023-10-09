@@ -31,8 +31,13 @@ class Buttons(commands.Cog):
         async def upscale(self, interaction, button):
             await interaction.response.defer()
 
-            # Use unique_id to fetch the image files
-            image_files = self.bot.get_cog('APICalls').image_paths.get(self.unique_id, [])
+            message_id = interaction.message.id  # Get the message ID from the interaction
+            message_info = self.bot.get_cog('APICalls').message_data.get(message_id)  # Retrieve the stored info
+
+            if message_info:
+                payload = message_info.get('payload')
+                user_id = message_info.get('user_id')
+                image_files = message_info.get('image_files', [])
             
             if not image_files:
                 await interaction.followup.send("No images found to upscale.", ephemeral=True)
@@ -50,9 +55,17 @@ class Buttons(commands.Cog):
         @discord.ui.button(style=ButtonStyle.secondary, label="Generate From Source Image", custom_id="choose_img", row=2)
         async def choose_img(self, interaction, button):
             await interaction.response.defer()
+            message_id = interaction.message.id  # Get the message ID from the interaction
+            message_info = self.bot.get_cog('APICalls').message_data.get(message_id)  # Retrieve the stored info
 
-            # Use unique_id to fetch the image files
-            image_files = self.bot.get_cog('APICalls').image_paths.get(self.unique_id, [])
+            if message_info:
+                payload = message_info.get('payload')
+                user_id = message_info.get('user_id')
+                image_files = message_info.get('image_files', [])
+            
+            if not image_files:
+                await interaction.followup.send("No images found.", ephemeral=True)
+                return
             
             select_menu = self.ImageSelect(self.bot, image_files, self.payload)
             await interaction.channel.send("Select an image to generate more from.", view=select_menu)
@@ -86,7 +99,6 @@ class Buttons(commands.Cog):
             # Create or update the payload
             payload = {
                 "initimage": base64_image
-                # ... (Any other parameters you need)
             }
 
             # Call the API method to upscale the image

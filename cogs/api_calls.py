@@ -21,7 +21,7 @@ class APICalls(commands.Cog):
         self.address = SWARM_URL
         self.session_id = ""
         self.session = aiohttp.ClientSession()  # Create a reusable session for API calls
-        self.image_paths: Dict[str, str] = {}  # To store image paths, indexed by user ID. Used for button logic.
+        self.message_data: Dict[int, Dict[str, Any]] = {}  # Message info, indexed by message ID. To be referenced by buttons
 
 
     async def get_session(self) -> str:
@@ -147,6 +147,14 @@ class APICalls(commands.Cog):
                             buttons_view = self.bot.get_cog('Buttons').ImageButtons(self.bot, interaction, payload)
                             await message.edit(content=f'Generating images for {interaction.user.mention} using\n**Prompt:** `{prompt}` \n**Negative:** `{negative}`',
                                                 embed=embed, attachments=[file], view=buttons_view)
+                            message_id = message.id  # Get the message ID from the sent message
+
+                            # Store information in the dictionary
+                            self.message_data[message_id] = {
+                                'payload': payload,
+                                'user_id': interaction.user.id,
+                            }
+
 
                     except websockets.exceptions.ConnectionClosedOK:
                         print("Connection closed OK")
