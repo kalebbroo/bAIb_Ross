@@ -97,13 +97,11 @@ class Buttons(commands.Cog):
             self.bot = bot
             self.payload = payload
             options = []
-
             for i, image_file in enumerate(image_files):
                 # Create a SelectOption for each image file
                 option = discord.SelectOption(label=f"Image {i+1}", value=image_file)
                 options.append(option)
-
-            super().__init__(placeholder='Choose the image you wish to upscale', options=options)
+            super().__init__(placeholder='Choose an image to use as a reference', options=options)
 
         # TODO: Test these parameters
         """Most Likely Essential Parameters:
@@ -133,8 +131,10 @@ class Buttons(commands.Cog):
                 #"selected_model": "some_value",
                 "lastparam_input_width": self.payload.get('width'),
                 "lastparam_input_height": self.payload.get('height'),
+                "images": 1,
             }
             self.payload.update(payload)
+            print(f"Payload from upscale: {self.payload}")
 
             # Call the API method to upscale the image
             upscaled_path = await self.bot.get_cog('APICalls').call_collect(interaction, payload)
