@@ -139,12 +139,7 @@ class Buttons(commands.Cog):
             print(f"Payload from upscale: {self.payload}")
 
             # Call the API method to upscale the image
-            upscaled_path = await self.bot.get_cog('APICalls').call_collect(interaction, payload)
-
-            # Display the upscaled image
-            with open(upscaled_path, 'rb') as f:
-                upscaled_image = discord.File(f)
-                await interaction.channel.send(file=upscaled_image)
+            await self.bot.get_cog('APICalls').call_collect(interaction, self.payload)
 
     class ImageSelect(Select):
         def __init__(self, bot, image_files, payload):
