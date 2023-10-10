@@ -105,16 +105,16 @@ class Buttons(commands.Cog):
                 options.append(option)
             super().__init__(placeholder='Choose an image to use as a reference', options=options)
 
-        # TODO: Test these parameters
-        """Most Likely Essential Parameters:
-            lastparam_input_model
-            selected_model
-            lastparam_input_width
-            lastparam_input_height
+            # TODO: Test these parameters
+            """Most Likely Essential Parameters:
+                lastparam_input_model
+                selected_model
+                lastparam_input_width
+                lastparam_input_height
 
-        Potentially Optional but Important:
-            lastparam_input_aspectratio
-            lastparam_input_prompt"""
+            Potentially Optional but Important:
+                lastparam_input_aspectratio
+                lastparam_input_prompt"""
 
         async def callback(self, interaction):
             await interaction.response.defer()
