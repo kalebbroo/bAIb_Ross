@@ -73,27 +73,37 @@ class ImageGrid(commands.Cog):
         # Paste the new image into the grid
         self.grid_image.paste(bordered_image, (x - border_size, y - border_size))
 
+        try:
             # Save the final images to disk
-        if not is_preview:
-            self.current_quadrant += 1
-            username = interaction.user.name
-            date_str = datetime.now().strftime("%Y-%m-%d")
-            #time_str = datetime.now().strftime("%H-%M-%S")
-            prompt_words = payload.get('prompt', '').split()[:5]
-            folder_name = f"images/{username}/{date_str}/{message_id}"
+            if not is_preview:
+                self.current_quadrant += 1
+                username = interaction.user.name
+                date_str = datetime.now().strftime("%Y-%m-%d")
+                time_str = datetime.now().strftime("%H-%M-%S")
+                prompt_words = payload.get('prompt', '').split()[:5]
+                folder_name = f"images/{username}/{date_str}/{message_id}"
 
-            os.makedirs(folder_name, exist_ok=True)
-            image_path = os.path.join(folder_name, f"{'-'.join(prompt_words)}.jpg")
-            new_image.save(image_path)
+                os.makedirs(folder_name, exist_ok=True)
+                image_path = os.path.join(folder_name, f"{'-'.join(prompt_words)}-{time_str}.jpg")
+                new_image.save(image_path)
 
-            # Access the message_data dictionary
-            message_data = self.bot.get_cog('APICalls').message_data
+                # Access the message_data dictionary
+                message_data = self.bot.get_cog('APICalls').message_data
 
-            # Update the image_paths dictionary using unique_id
-            if message_id in message_data:
-                if 'image_paths' not in message_data[message_id]:
-                    message_data[message_id]['image_paths'] = []
-                message_data[message_id]['image_paths'].append(image_path)
+                # Update the image_files dictionary using message_id
+                if message_id not in message_data:
+                    message_data[message_id] = {'payload': payload, 'user_id': interaction.user.id, 'image_files': []}
+
+                if 'image_files' not in message_data[message_id]:
+                    message_data[message_id]['image_files'] = []
+
+                message_data[message_id]['image_files'].append(image_path)
+                print(f"Image paths: {message_data[message_id]['image_files']}")
+
+        except Exception as e:
+            print(f"An exception occurred: {e}")
+            import traceback
+            traceback.print_exc()
 
         # Resize the grid image for quick Discord uploading (Optional)
         new_size = tuple(int(dim * 0.45) for dim in self.grid_image.size)

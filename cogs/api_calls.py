@@ -2,6 +2,7 @@ from typing import Any, Dict, Optional
 from websockets.exceptions import ConnectionClosedOK, ConnectionClosedError
 from discord.ext import commands
 import websockets
+import traceback
 import json
 import base64
 from PIL import Image
@@ -146,23 +147,21 @@ class APICalls(commands.Cog):
                             embed, file = await image_grid_cog.image_grid(image, interaction, is_preview=False, payload=payload, message_id=message_id)
 
                             # Create an instance of the ImageButtons view from the Buttons Cog
-                            buttons_view = self.bot.get_cog('Buttons').ImageButtons(self.bot, interaction, payload)
+                            buttons_view = self.bot.get_cog('Buttons').ImageButtons(self.bot, interaction, payload, message_id=message_id)
                             await message.edit(content=f'Generating images for {interaction.user.mention} using\n**Prompt:** `{prompt}` \n**Negative:** `{negative}`',
                                                 embed=embed, attachments=[file], view=buttons_view)
 
                             # Store information in the dictionary
-                            self.message_data[message_id] = {
-                                'payload': payload,
-                                'user_id': interaction.user.id,
-                            }
-
+                            if message_id not in self.message_data:
+                                self.message_data[message_id] = {'payload': payload, 'user_id': interaction.user.id, 'image_files': []}
 
                     except websockets.exceptions.ConnectionClosedOK:
                         print("Connection closed OK")
                         break
                     except Exception as e:
-                        logging.error(f"An error occurred: {e}")
-                        print(f"An exception occurred: {e}")
+                        full_traceback = traceback.format_exc()
+                        logging.error(f"An error occurred: {e}\nFull Traceback: {full_traceback}")
+                        print(f"An exception occurred: {e}\nFull Traceback: {full_traceback}")
                         break
 
         except (ConnectionClosedOK, ConnectionClosedError):
@@ -173,8 +172,9 @@ class APICalls(commands.Cog):
             payload["session_id"] = new_session_id
             await self.call_collect(interaction, payload)
         except Exception as e:
-            logging.error(f"An error occurred: {e}")
-            print(f"An exception occurred: {e}")
+            full_traceback = traceback.format_exc()
+            logging.error(f"An error occurred: {e}\nFull Traceback: {full_traceback}")
+            print(f"An exception occurred: {e}\nFull Traceback: {full_traceback}")
 
 async def setup(bot: commands.Bot) -> None:
     """Setup function to add the Cog to the bot.
