@@ -47,8 +47,10 @@ class Buttons(commands.Cog):
                     await interaction.followup.send("No images found to upscale.", ephemeral=True)
                     return
 
-                select_menu = self.UpscaleSelect(self.bot, image_files)
-                await interaction.channel.send("Select an image to upscale so you can save it.", view=select_menu)
+                select_menu = Buttons.UpscaleSelect(self.bot, image_files, self.payload)
+                view = discord.ui.View()
+                view.add_item(select_menu)
+                await interaction.channel.send("Select an image to upscale", view=view)
 
             except Exception as e:
                 print(f"An exception occurred in the upscale button: {e}")
