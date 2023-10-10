@@ -93,8 +93,9 @@ class Buttons(commands.Cog):
 
     # Select Menu for choosing an image to upscale
     class UpscaleSelect(Select):
-        def __init__(self, bot, image_files):
+        def __init__(self, bot, image_files, payload):
             self.bot = bot
+            self.payload = payload
             options = []
 
             for i, image_file in enumerate(image_files):
@@ -118,23 +119,28 @@ class Buttons(commands.Cog):
         async def callback(self, interaction):
             await interaction.response.defer()
             # Get the selected image file
-            selected_image_path = self.values[0]
+            image_path = self.values[0]
 
             # Convert the image to Base64
-            with open(selected_image_path, "rb") as f:
+            with open(image_path, "rb") as f:
                 image_data = f.read()
-                base64_image = base64.b64encode(image_data).decode('utf-8')
+                image = base64.b64encode(image_data).decode('utf-8')
 
             # Create or update the payload
             payload = {
-                "initimage": base64_image
+                "initimage": image,
+                "lastparam_input_model": self.payload.get('model'),
+                #"selected_model": "some_value",
+                "lastparam_input_width": self.payload.get('width'),
+                "lastparam_input_height": self.payload.get('height'),
             }
+            self.payload.update(payload)
 
             # Call the API method to upscale the image
-            upscaled_image_path = await self.bot.get_cog('APICalls').call_collect(interaction, payload)
+            upscaled_path = await self.bot.get_cog('APICalls').call_collect(interaction, payload)
 
             # Display the upscaled image
-            with open(upscaled_image_path, 'rb') as f:
+            with open(upscaled_path, 'rb') as f:
                 upscaled_image = discord.File(f)
                 await interaction.channel.send(file=upscaled_image)
 
