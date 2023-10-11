@@ -91,7 +91,7 @@ class GenerateImage(commands.Cog):
             width=1024,
             height=1024,
             cfgscale=7,
-            steps=80,
+            steps=10,
             seed=-1,
             init_image=init_img_base64,
         )

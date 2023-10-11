@@ -129,10 +129,10 @@ class Buttons(commands.Cog):
             # Create or update the payload
             payload = {
                 "initimage": image,
-                "lastparam_input_model": self.payload.get('model'),
-                #"selected_model": "some_value",
-                "lastparam_input_width": self.payload.get('width'),
-                "lastparam_input_height": self.payload.get('height'),
+                "init_image_creativity": 0,
+                "model": self.payload.get('model'),
+                "width": self.payload.get('width') * 2,
+                "height": self.payload.get('height') * 2,
                 "images": 1,
             }
             self.payload.update(payload)
@@ -166,6 +166,7 @@ class Buttons(commands.Cog):
             
             # Update the payload
             self.payload.update({"initimage": base64_image})
+            self.payload.update({"init_image_creativity": 0.8})
             # TODO: maybe add another peram init_image_creativity
 
             # Generate more images from the selected image
