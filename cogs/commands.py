@@ -211,23 +211,23 @@ class Commands(commands.Cog):
         return first_model, model_view
     
     def steps_setting(self, bot, settings_data, model_list):
-        step_values = [
-                        "1 (Unusable)", 
-                        "5 (Very Low)", 
-                        "8 (Low)",
-                        "10 (*Recommended* for speed)", 
-                        "15 (Above Avg.)", 
-                        "16 (Good)",
-                        "17 (Good+)", 
-                        "18 (Good++)",
-                        "19 (Very Good)", 
-                        "20 (Recommended balance)", 
-                        "25 (High, Slower)", 
-                        "30 (High, Slower++)", 
-                        "35 (Very High, Long Wait)", 
-                        "40 (Not Worth It, Very Long Wait)",
-                        "60 (Could Break the bot)"
-                    ]
+        step_values = {
+                        1: "1 (Unusable)", 
+                        5: "5 (Very Low)", 
+                        8: "8 (Low)",
+                        10: "10 (*Recommended* for speed)", 
+                        15: "15 (Above Avg.)", 
+                        16: "16 (Good)",
+                        17: "17 (Good+)", 
+                        18: "18 (Good++)",
+                        19: "19 (Very Good)", 
+                        20: "20 (Recommended balance)", 
+                        25: "25 (High, Slower)", 
+                        30: "30 (High, Slower++)", 
+                        35: "35 (Very High, Long Wait)", 
+                        40: "40 (Not Worth It, Very Long Wait)",
+                        60: "60 (Could Break the bot)"
+                    }
         steps = [discord.SelectOption(label=value, value=value) for value in step_values]
         return Commands.SettingsSelect(bot, "Choose Steps", steps, self.cfgscale_setting, settings_data, model_list)
 
