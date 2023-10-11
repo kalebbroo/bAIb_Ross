@@ -128,12 +128,14 @@ class Buttons(commands.Cog):
 
             # Create or update the payload
             payload = {
+                "upscale": "true",
                 "initimage": image,
                 "init_image_creativity": 0,
                 "model": self.payload.get('model'),
                 "width": self.payload.get('width') * 2,
                 "height": self.payload.get('height') * 2,
                 "images": 1,
+                "steps": 40,
             }
             self.payload.update(payload)
             print(f"Payload from upscale: {self.payload}")

@@ -35,6 +35,67 @@ class ImageGrid(commands.Cog):
             for col in range(grid_size)
         ]
 
+    async def upscale_embed(self, new_image: Image.Image, interaction, is_preview: bool, payload: Dict, message_id=None) -> Tuple[discord.Embed, discord.File]:
+        """Generate a single upscaled image and return it with an embed.
+        Args:
+            new_image: The new image to add to the embed.
+            interaction: The Discord interaction that triggered this.
+            is_preview: Whether the image is a preview or final.
+            payload: Additional data for the embed.
+        Returns:
+            A tuple containing the Discord embed and file.
+        """
+        # Save the final images to disk
+        if not is_preview:
+            username = interaction.user.name
+            date_str = datetime.now().strftime("%Y-%m-%d")
+            time_str = datetime.now().strftime("%H-%M-%S")
+            prompt_words = payload.get('prompt', '').split()[:5]
+            folder_name = f"images/{username}/{date_str}/upscaled"
+
+            os.makedirs(folder_name, exist_ok=True)
+            image_path = os.path.join(folder_name, f"{'-'.join(prompt_words)}-{time_str}.jpg")
+            new_image.save(image_path)
+
+            # Access the message_data dictionary
+            message_data = self.bot.get_cog('APICalls').message_data
+
+            # Update the image_files dictionary using message_id
+            if message_id not in message_data:
+                message_data[message_id] = {'payload': payload, 'user_id': interaction.user.id, 'image_files': []}
+
+            if 'image_files' not in message_data[message_id]:
+                message_data[message_id]['image_files'] = []
+
+            message_data[message_id]['image_files'].append(image_path)
+            print(f"Image paths: {message_data[message_id]['image_files']}")
+
+        # Convert the PIL image to a Discord-friendly file
+        image_file = BytesIO()
+        new_image.save(image_file, format='PNG')
+        image_file.seek(0)
+
+        model_name = payload.get('model', 'Unknown')
+        width = payload.get('width', 'Unknown')
+        height = payload.get('height', 'Unknown')
+        seed = payload.get('seed', 'Unknown')
+        prompt = payload.get('prompt', 'Unknown')
+        negative = payload.get('negativeprompt', 'Unknown')
+        images = payload.get('images', 'Unknown')
+        steps = payload.get('steps', 'Unknown')
+        cfgscale = payload.get('cfgscale', 'Unknown')
+
+        # Create the embed
+        model_name = payload.get('model', 'Unknown')
+        embed = discord.Embed(title="**Here is your upscaled image!**", description=f"Generated using Model: {model_name}", color=0x00ff00)
+        embed.set_footer(text=f"Size: {width}x{height} | Seed: {seed} | Steps: {steps} | Cfg Scale: {cfgscale}")
+
+        # Attach the image file to the embed
+        file = discord.File(image_file, filename="upscaled_image.png")
+        embed.set_image(url=f"attachment://{file.filename}")
+
+        return embed, file
+
     async def image_grid(self, new_image: Image.Image, interaction, is_preview: bool, payload: Dict, message_id=None) -> Tuple[discord.Embed, discord.File]:
         """Generate an image grid and return it along with an embed.
         Args:
@@ -45,6 +106,11 @@ class ImageGrid(commands.Cog):
         Returns:
             A tuple containing the Discord embed and file.
         """
+        upscale = payload.get('upscale', False)
+        if upscale:
+            embed, file = await self.upscale_embed(new_image, interaction, is_preview, payload, message_id)
+            return embed, file
+
         # Dynamically resize the new image based on the payload This is needed because preview images are smaller.
         # TODO: Make this more efficient by only running it IF the image is a preview
         width = payload.get('width', 1024)

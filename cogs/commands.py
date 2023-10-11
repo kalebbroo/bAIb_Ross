@@ -112,7 +112,7 @@ class Commands(commands.Cog):
         """The buttons for navigating between models.
         This view contains buttons for navigating to the previous model, selecting the current model,
         navigating to the next model, and generating a list of available models. It allows users to 
-        interactively browse and select models in Discord.
+        interactively browse and select models and change settings before generating an image.
         """
         def __init__(self, bot, models, index, settings_data):
             super().__init__(timeout=180)
@@ -211,13 +211,42 @@ class Commands(commands.Cog):
         return first_model, model_view
     
     def steps_setting(self, bot, settings_data, model_list):
-        step_values = ["5", "8", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "30", "40", "50", "60", "70", "80"]
+        step_values = [
+                        "1 (Unusable)", 
+                        "5 (Very Low)", 
+                        "8 (Low)",
+                        "10 (*Recommended* for speed)", 
+                        "15 (Above Avg.)", 
+                        "16 (Good)",
+                        "17 (Good+)", 
+                        "18 (Good++)",
+                        "19 (Very Good)", 
+                        "20 (Recommended balance)", 
+                        "25 (High, Slower)", 
+                        "30 (High, Slower++)", 
+                        "35 (Very High, Long Wait)", 
+                        "40 (Not Worth It, Very Long Wait)",
+                        "60 (Could Break the bot)"
+                    ]
         steps = [discord.SelectOption(label=value, value=value) for value in step_values]
         return Commands.SettingsSelect(bot, "Choose Steps", steps, self.cfgscale_setting, settings_data, model_list)
 
     def cfgscale_setting(self, bot, settings_data, model_list):
-        cfgscale = [discord.SelectOption(label=str(i), value=str(i)) for i in range(1, 11)]
+        cfgscale_descriptions = {
+                                1: "1 (AI Imagination is weird)",
+                                2: "2 (Creative, will ignore prompt)",
+                                3: "3 (Creative)",
+                                4: "4 (Creative+)",
+                                5: "5 (Balanced)",
+                                6: "6 (Balanced+)",
+                                7: "7 (Balanced++)",
+                                8: "8 (Guided)",
+                                9: "9 (Requires Detailed Prompt)",
+                                10: "10 (Max, Not Recommended)"
+                            }
+        cfgscale = [discord.SelectOption(label=cfgscale_descriptions[i], value=str(i)) for i in range(1, 11)]
         return Commands.SettingsSelect(bot, "Choose CFG Scale", cfgscale, self.lora_setting, settings_data, model_list)
+
 
     def lora_setting(self, bot, settings_data, model_list):
         lora = [discord.SelectOption(label="Placeholder", value="Placeholder")]
@@ -251,9 +280,9 @@ class Commands(commands.Cog):
             "1:1": "1:1 Square", 
             "4:3": "4:3 Standard Landscape", 
             "3:2": "3:2 Classic Landscape", 
+            "8:5": "8:5 Landscape", 
             "16:9": "16:9 Widescreen Landscape",
             "21:9": "21:9 Ultra-Widescreen Landscape",
-            "8:5": "8:5 Landscape", 
             "3:4": "3:4 Standard Portrait",
             "2:3": "2:3 Classic Portrait",
             "5:8": "5:8 Portrait",
@@ -303,8 +332,7 @@ class Commands(commands.Cog):
                                         CFG 2 - 4: Creative, but might be too distorted and not follow the prompt. Can be fun and useful for short prompts
                                         CFG 5 - 8: Recommended for most prompts. Good balance between creativity and guided generation
                                         CFG 9 - 10: When you're sure that your prompt is detailed and very clear on what you want the image to look like
-                                        CFG 11 - 20: Not generally recommended unless the prompt is well-detailed. Might affect coherence and quality
-                                        CFG >20: almost never usable""",
+                                        CFG 11 - 20: Not generally recommended almost never usable""",
                             color=discord.Color.purple()
                         )
                         embed.set_image(url="https://i0.wp.com/blog.openart.ai/wp-content/uploads/2023/02/Screen-Shot-2023-02-13-at-5.25.57-PM.png?resize=768%2C213&ssl=1")

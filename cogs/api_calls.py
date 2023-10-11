@@ -41,9 +41,9 @@ class APICalls(commands.Cog):
     @staticmethod
     def create_payload(session_id: str, prompt: Optional[str] = None, negativeprompt: Optional[str] = None, 
                        images: int = 4, donotsave: bool = True, model: str = "OfficialStableDiffusion/v1-5-pruned-emaonly.safetensors", 
-                       width: int = 512, height: int = 512, cfgscale: int = 7,
+                       width: int = 512, height: int = 512, cfgscale: int = 7, upscale: Optional[bool] = False,
                        steps: int = 20, seed: int = -1, enableaitemplate: Optional[Any] = None, 
-                       init_image: Optional[str] = None, init_image_creativity: Optional[float] = None, 
+                       init_image: Optional[str] = None, init_image_creativity: Optional[float] = None,
                        lora: Optional[str] = None, embedding: Optional[str] = None) -> Dict:
         """Create a payload for an API call.
         Args:
@@ -81,6 +81,7 @@ class APICalls(commands.Cog):
             "enableaitemplate": enableaitemplate,
             "init_image": init_image,
             "init_image_creativity": init_image_creativity,
+            "upscale": upscale,
             "lora": lora,
             "embedding": embedding,
         }
