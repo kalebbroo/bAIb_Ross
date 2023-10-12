@@ -7,6 +7,7 @@ from io import BytesIO
 from PIL import Image
 from datetime import datetime
 import base64
+import asyncio
 
 class Buttons(commands.Cog):
     def __init__(self, bot):
@@ -16,11 +17,24 @@ class Buttons(commands.Cog):
 
     class ImageButtons(View):
         def __init__(self, bot, interaction, payload, message_id=None):
-            super().__init__(timeout=180)
+            super().__init__(timeout=45)  # set the timeout to 45 seconds
             self.bot = bot
             self.payload = payload
             self.message_id = message_id
+            self.channel_id = interaction.channel_id
 
+            # Automatically start the countdown to disable buttons
+            asyncio.create_task(self.disable_buttons())
+
+        async def disable_buttons(self):
+            await asyncio.sleep(45)
+            channel = self.bot.get_channel(self.channel_id)
+            if channel:
+                original_message = await channel.fetch_message(self.message_id)
+                if original_message:
+                    for button in self.children:
+                        button.disabled = True
+                    await original_message.edit(view=self)
 
         @discord.ui.button(style=ButtonStyle.success, label="Regenerate", custom_id="regenerate", row=1)
         async def regenerate(self, interaction, button):

@@ -99,7 +99,7 @@ class APICalls(commands.Cog):
 
         # Handling WebSocket connection and image generation
         try:
-            async with websockets.connect(uri, ping_interval=120, ping_timeout=210) as ws:
+            async with websockets.connect(uri, ping_interval=210, ping_timeout=320) as ws:
                 await ws.send(json.dumps(payload))
                 #print("Sent payload to WebSocket")
                 
@@ -131,6 +131,7 @@ class APICalls(commands.Cog):
                             embed, file = await image_grid_cog.image_grid(image, interaction, is_preview=True, payload=payload, message_id=message_id)
                             await message.edit(content=f'Generating images for {interaction.user.mention} using\n**Prompt:** `{prompt}` \n**Negative:** `{negative}`',
                                                 embed=embed, attachments=[file])
+                            image_grid_cog = self.bot.get_cog("ImageGrid")
                         elif error_data:
                             print(f"Received error data: {error_data}")
                             # Log error and send error message
@@ -147,11 +148,14 @@ class APICalls(commands.Cog):
 
                             embed, file = await image_grid_cog.image_grid(image, interaction, is_preview=False, payload=payload, message_id=message_id)
 
-                            # Create an instance of the ImageButtons view from the Buttons Cog
-                            buttons_view = self.bot.get_cog('Buttons').ImageButtons(self.bot, interaction, payload, message_id=message_id)
-                            await message.edit(content=f'Generating images for {interaction.user.mention} using\n**Prompt:** `{prompt}` \n**Negative:** `{negative}`',
-                                                embed=embed, attachments=[file], view=buttons_view)
-
+                            # Check if it's the last image in the last grid
+                            if image_grid_cog.current_quadrant == 4:  
+                                buttons_view = self.bot.get_cog('Buttons').ImageButtons(self.bot, interaction, payload, message_id=message_id)
+                                await message.edit(content=f'Generating images for {interaction.user.mention} using\n**Prompt:** `{prompt}` \n**Negative:** `{negative}`',
+                                                    embed=embed, attachments=[file], view=buttons_view)
+                            else:
+                                await message.edit(content=f'Generating images for {interaction.user.mention} using\n**Prompt:** `{prompt}` \n**Negative:** `{negative}`',
+                                                    embed=embed, attachments=[file])
                             # Store information in the dictionary
                             if message_id not in self.message_data:
                                 self.message_data[message_id] = {'payload': payload, 'user_id': interaction.user.id, 'image_files': []}
