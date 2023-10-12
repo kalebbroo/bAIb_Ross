@@ -228,7 +228,7 @@ class Commands(commands.Cog):
                         40: "40 (Not Worth It, Very Long Wait)",
                         60: "60 (Could Break the bot)"
                     }
-        steps = [discord.SelectOption(label=value, value=value) for value in step_values]
+        steps = [discord.SelectOption(label=label, value=key) for key, label in step_values.items()]
         return Commands.SettingsSelect(bot, "Choose Steps", steps, self.cfgscale_setting, settings_data, model_list)
 
     def cfgscale_setting(self, bot, settings_data, model_list):

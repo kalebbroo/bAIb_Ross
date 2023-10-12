@@ -146,7 +146,7 @@ class ImageGrid(commands.Cog):
                 username = interaction.user.name
                 date_str = datetime.now().strftime("%Y-%m-%d")
                 time_str = datetime.now().strftime("%H-%M-%S")
-                prompt_words = payload.get('prompt', '').split()[:5]
+                prompt_words = payload.get('prompt', '').split()[:3]
                 folder_name = f"images/{username}/{date_str}/{message_id}"
 
                 os.makedirs(folder_name, exist_ok=True)
