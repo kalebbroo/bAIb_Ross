@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 import openai
 import os
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Any, Dict
 
 # Get the GPT key from environment variables
 GPT_KEY = os.getenv('GPT_KEY')
@@ -14,18 +14,38 @@ class AIPromptGenerator(commands.Cog):
         self.bot = bot
         self.openai = openai  # OpenAI API client
         self.openai.api_key = GPT_KEY  # Set the API key for OpenAI
-        self.pre_prompt = self.read_pre_prompt()  # Read the pre-defined prompt instructions from file
+        # Read the pre-defined instructions from text files
+        self.pre_prompt = self.read_instructions('pre_prompt.txt')
+        self.random_prompt = self.read_instructions('random_prompt.txt')
         self.openai.Model.list()  # List available models for debugging
 
-    def read_pre_prompt(self) -> str:
-        """Read pre-defined prompts from a text file.
+    def read_instructions(self, filename: str) -> str:
+        """Read pre-defined instructions from a text file.
+        Args:
+            filename: The name of the file to read.
         Returns:
-            The content of the pre_prompt.txt file as a string.
+            The content of the file as a string.
         """
-        with open('pre_prompt.txt', 'r', encoding='utf-8') as file:
+        with open(filename, 'r', encoding='utf-8') as file:
             return file.read()
 
-    async def rewrite_prompt(self, interaction, prompt: str, negative: str) -> Tuple[Optional[str], Optional[str]]:
+    async def gpt_phone_home(self, interaction: discord.Interaction, instruction: str, p_n: str) -> Dict[str, Any]:
+        """Make the API call using GPT-3."""
+        model_list = self.openai.Model.list()  # Retrieve the list of available models (for debugging)
+        print(f"\nModel List: {[model['id'] for model in model_list['data']]}\n\n") # Print the list of available models (for debugging)
+        # Make an API call to rewrite the prompt
+        response = self.openai.ChatCompletion.create(
+            model="gpt-3.5-turbo-0301",
+            messages=[
+                {"role": "system", "content": instruction},  # System's instructions
+                {"role": "user", "content": p_n},  # User's prompt and negative
+            ],
+            max_tokens=2000,
+            temperature=0.7,
+        )
+        return response
+
+    async def rewrite_prompt(self, interaction: Any, prompt: str, negative: str) -> Tuple[Optional[str], Optional[str]]:
         """Rewrite the prompt using GPT-3.
         Args:
             interaction: The Discord interaction that triggered this.
@@ -34,9 +54,6 @@ class AIPromptGenerator(commands.Cog):
         Returns:
             A tuple containing the rewritten prompt and negative prompt.
         """
-        model_list = self.openai.Model.list()  # Retrieve the list of available models (for debugging)
-        print(f"\nModel List: {[model['id'] for model in model_list['data']]}\n\n") # Print the list of available models (for debugging)
-        
         # Add 'Prompt:' and 'Negative:' to user's original prompt and negative
         user_prompt = f"Prompt: {prompt}"
         user_negative = f"Negative: {negative}"
@@ -46,33 +63,60 @@ class AIPromptGenerator(commands.Cog):
         print(f"Debug: p_n = {p_n}\n\n")
 
         # Make an API call to rewrite the prompt
-        response = self.openai.ChatCompletion.create(
-            model="gpt-3.5-turbo-0301",
-            messages=[
-                {"role": "system", "content": self.pre_prompt},  # Pre-prompt
-                {"role": "user", "content": p_n},  # User's prompt and negative
-            ],
-            max_tokens=2000,
-            temperature=0.7,
-        )
+        response = await self.gpt_phone_home(interaction, self.pre_prompt, p_n)
+
         # After getting the API response
         prompt_text = response['choices'][0]['message']['content'].strip()
         print(f"Debug: prompt_text = {prompt_text}\n\n")
-        
-        # Split the text into 'prompt' and 'negative'
-        prompt_parts = prompt_text.split("This is the rewritten Negative:")
+
+        # Use the new split_prompt method to split the text into 'prompt' and 'negative'
+        prompt, negative = self.split_prompt(prompt_text, "This is the rewritten Prompt:", "This is the rewritten Negative:")
+
+        print(f"Debug: returned prompt = {prompt}\n\n")
+        print(f"Debug: returned negative = {negative}\n\n")
+        return prompt, negative        
+    
+    async def random_prompt(self, interaction: Any) -> Tuple[Optional[str], Optional[str]]:
+        """Generate a random prompt using GPT-3.
+        Returns:
+            A tuple containing the generated prompt and negative prompt.
+        """
+        p_n = "Create a random prompt and negative with the subject being a random movie or scenery."
+        response = await self.gpt_phone_home(interaction, self.random_prompt, p_n)
+
+        # After getting the API response
+        prompt_text = response['choices'][0]['message']['content'].strip()
+        print(f"Debug: prompt_text = {prompt_text}\n\n")
+
+        # Use the new split_prompt method to split the text into 'prompt' and 'negative'
+        prompt, negative = self.split_prompt(prompt_text, "This is the rewritten Prompt:", "This is the rewritten Negative:")
+
+        print(f"Debug: returned prompt = {prompt}\n\n")
+        print(f"Debug: returned negative = {negative}\n\n")
+        return prompt, negative
+    
+    def split_prompt(self, prompt_text: str, prompt_label: str, negative_label: str) -> Tuple[Optional[str], Optional[str]]:
+        """Split the returned prompt text into 'prompt' and 'negative'.
+        Args:
+            prompt_text: The combined prompt and negative text returned by GPT-3.
+            prompt_label: The label used to identify the prompt in the text.
+            negative_label: The label used to identify the negative in the text.
+        Returns:
+            A tuple containing the split 'prompt' and 'negative'.
+        """
+        # Split the text using the negative label
+        prompt_parts = prompt_text.split(negative_label)
         
         if len(prompt_parts) == 2:
-            # Extract the two parts and remove the headers
+            # Extract the two parts and strip leading/trailing whitespace
             prompt, negative = map(str.strip, prompt_parts)
-            prompt = prompt.replace("This is the rewritten Prompt:", "").strip()
+            # Remove the prompt label from the prompt part
+            prompt = prompt.replace(prompt_label, "").strip()
         else:
             # Handle cases where splitting didn't work as expected
             print(f"Debug: Splitting failed, prompt_parts = {prompt_parts}\n")
             prompt, negative = None, None
 
-        print(f"Debug: returned prompt = {prompt}\n\n")
-        print(f"Debug: returned negative = {negative}\n\n")
         return prompt, negative
 
 async def setup(bot: commands.Bot) -> None:

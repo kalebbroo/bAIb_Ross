@@ -65,7 +65,9 @@ class Commands(commands.Cog):
 
         else:
             # Display the modal for text to image conversion
-            modal = self.Txt2imgModal(self.bot, interaction)
+            ai = self.bot.get_cog("AIPromptGenerator")
+            random_prompt, random_negative = await ai.random_prompt(interaction)
+            modal = Commands.Txt2imgModal(self.bot, interaction, random_prompt, random_negative)
             await interaction.response.send_modal(modal)
 
     async def get_model_list(self) -> List[Dict[str, Any]]:
@@ -101,7 +103,6 @@ class Commands(commands.Cog):
                 for file in data.get("files", [])
             ]
             # Sort the model list by 'title'
-            #model_list.sort(key=lambda x: (x['title'][0].isdigit(), int(''.join(filter(str.isdigit, x['title'].split()[0]))) if x['title'][0].isdigit() else x['title']))
             model_list.sort(key=lambda x: int(x['title'].split()[0].replace('.', '')))
             titles = [model['title'] for model in model_list]
             print(titles)
@@ -167,8 +168,6 @@ class Commands(commands.Cog):
             next_select_menu = self.bot.get_cog("Commands").steps_setting(self.bot, self.settings_data, self.models)
             view = discord.ui.View()
             view.add_item(next_select_menu)
-            # embed = discord.Embed(title=f"Setting for {next_select_menu.placeholder}", description="Choose an option.")
-            # await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
             embed = discord.Embed(
                             title="Step Selection",
                             description="""The 'Steps' setting controls the number of iterations 
@@ -223,14 +222,15 @@ class Commands(commands.Cog):
     settings via interactive menus.
     """
 
+
     async def model_setting(self, bot, interaction, settings_data, start=0):
         model_list = await self.get_model_list()
 
         # Prepare options for the SettingsSelect
-        # <<< EDIT HERE: Only take 24 models starting from the index 'start'
+        # Only take 24 models starting from the index 'start'
         options = [discord.SelectOption(label=model['title'], value=model['name']) for model in model_list[start:start + 24]]
 
-        # <<< EDIT HERE: Add "Show more models..." if there are more models to show
+        # Add "Show more models..." if there are more models to show
         if len(model_list) > start + 24:
             options.append(discord.SelectOption(label='Show more models...', value='Show more models...'))
 
@@ -345,7 +345,7 @@ class Commands(commands.Cog):
         async def callback(self, interaction: discord.Interaction):
             selected_value = self.values[0]
             
-            # <<< EDIT HERE: Handle the "Show more models..." option
+            # Handle the "Show more models..." option
             if selected_value == 'Show more models...':
                 next_select_menu = await self.bot.get_cog("Commands").model_setting(self.bot, interaction, self.settings_data, start=self.start + 25)
                 view = discord.ui.View()
@@ -354,7 +354,7 @@ class Commands(commands.Cog):
                 await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
                 return
             else:
-                # <<< EDIT HERE: Save the selected model if a specific model was clicked
+                # Save the selected model if a specific model was clicked
                 self.settings_data['Choose a Model'] = selected_value
 
                 # Handle the transition to the next setting (steps)
@@ -433,7 +433,9 @@ class Commands(commands.Cog):
                     # If there's no next setting send modal
                     user_id = str(interaction.user.id)  # Convert user ID to string
                     Commands.user_settings[user_id]["settings_data"].update(self.settings_data)
-                    modal = Commands.Txt2imgModal(self.bot, interaction)
+                    ai = self.bot.get_cog("AIPromptGenerator")
+                    random_prompt, random_negative = await ai.random_prompt(interaction)
+                    modal = Commands.Txt2imgModal(self.bot, interaction, random_prompt, random_negative)
                     await interaction.response.send_modal(modal)
                     return
                 
@@ -444,30 +446,18 @@ class Commands(commands.Cog):
                 # Send the embed
                 await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
-    async def random_prompt(self, interaction: discord.Interaction):
-        """Generate a random prompt.
-        Args:
-            interaction: The Discord interaction object.
-        """
-        # TODO: Add the logic to read a file and make an openai api call to generate a prompt
-        pass
-
     class Txt2imgModal(Modal):
-        def __init__(self, bot, interaction):
+        def __init__(self, bot, interaction, random_prompt=None, random_negative=None):
             super().__init__(title="Enter Prompt")
             self.bot = bot
+
             self.prompt = TextInput(label='Enter your prompt', style=discord.TextStyle.paragraph,
-                                    default="""solo, realistic, real life, looking at viewer, facing viewer, 
-                                            daenerys targaryen , middle shot, professional, high quality, amazing, 
-                                            rendered in maya, Junji Ito, Peter Elson, masterpiece, highres,  4k, 
-                                            detailed background, festive, (vibrant:0.8)""",
+                                    default=random_prompt,
                                     min_length=1, max_length=2000, required=True)
             self.negative = TextInput(label='Enter your negative', style=discord.TextStyle.paragraph,
-                                   default="""naked, nipples, anime, cartoon, drawing, bad anatomy, bad hands, text, error, 
-                                            missing fingers, extra digit, extra ears, fewer digits, cropped, worst quality, 
-                                            low quality, normal quality, jpeg artifacts, signature, watermark, username, 
-                                            out of focus, deformed, amateur, morphing, lowres""",
-                                           min_length=1, max_length=2000, required=True)
+                                    default=random_negative,
+                                    min_length=1, max_length=2000, required=True)
+            
             self.add_item(self.prompt)
             self.add_item(self.negative)
 
