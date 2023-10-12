@@ -99,8 +99,9 @@ class APICalls(commands.Cog):
 
         # Handling WebSocket connection and image generation
         try:
-            async with websockets.connect(uri, ping_interval=210, ping_timeout=320) as ws:
+            async with websockets.connect(uri, ping_interval=210, ping_timeout=320, max_size=2**21) as ws:
                 await ws.send(json.dumps(payload))
+                print(ws.max_size)
                 #print("Sent payload to WebSocket")
                 
                 prompt = payload.get("prompt", "No prompt")

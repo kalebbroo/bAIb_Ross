@@ -189,13 +189,32 @@ class Commands(commands.Cog):
             self.index = (self.index + 1) % len(self.models)
             await self.send_model_embed(interaction)
 
-        @discord.ui.button(style=discord.ButtonStyle.secondary, label="Generate Model List", row=2)
+        @discord.ui.button(style=discord.ButtonStyle.secondary, label="Choose Model From List (faster)", row=2)
         async def generate_model_list(self, interaction, button):
-            next_select_menu = await self.bot.get_cog("Commands").model_setting(self.bot, self.settings_data, start=0)
+            # Fetch the model list from your bot's command cog
+            model_list = await self.bot.get_cog("Commands").get_model_list()
+            
+            # Prepare options for the SettingsSelect
+            options = [
+                discord.SelectOption(label=model['title'], value=model['name']) for model in model_list
+            ]
+            # Initialize the next_setting function (replace this with the actual function)
+            next_setting = self.bot.get_cog("Commands").steps_setting  # Replace with the next setting function
+            # Create an instance of SettingsSelect
+            model_select_menu = Commands.SettingsSelect(bot=self.bot, placeholder='Choose a Model', 
+                                            options=options, next_setting=next_setting, 
+                                            settings_data=self.settings_data, model_list=model_list)
+            # Create a view and add the select menu
             view = discord.ui.View()
-            view.add_item(next_select_menu)
-            embed = discord.Embed(title=f"Setting for {next_select_menu.placeholder}", description="Choose an option.")
+            view.add_item(model_select_menu)
+
+            # Create the embed
+            embed = discord.Embed(title="XL models are better than 1.5 but take longer to gen", 
+                                description="Read the descriptions to find the best model for you.")
+            # Send the message
             await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+
+
 
     """The model settings logic for when the user is selecting settings.
     
@@ -206,9 +225,23 @@ class Commands(commands.Cog):
 
     async def model_setting(self, bot, interaction, settings_data, start=0):
         model_list = await self.get_model_list()
-        model_view = Commands.ModelView(bot, model_list, 0, settings_data)
-        first_model = model_list[0]
-        return first_model, model_view
+
+        # Prepare options for the SettingsSelect
+        # <<< EDIT HERE: Only take 24 models starting from the index 'start'
+        options = [discord.SelectOption(label=model['title'], value=model['name']) for model in model_list[start:start + 24]]
+
+        # <<< EDIT HERE: Add "Show more models..." if there are more models to show
+        if len(model_list) > start + 24:
+            options.append(discord.SelectOption(label='Show more models...', value='Show more models...'))
+
+        # Initialize the next_setting function
+        next_setting = self.steps_setting  # Replace with the next setting function
+
+        # Create an instance of SettingsSelect
+        return Commands.SettingsSelect(bot=bot, placeholder='Choose a Model', 
+                                       options=options, next_setting=next_setting,
+                                       settings_data=settings_data, model_list=model_list, start=start)
+    
     
     def steps_setting(self, bot, settings_data, model_list):
         step_values = {
@@ -226,7 +259,10 @@ class Commands(commands.Cog):
                         30: "30 (High, Slower++)", 
                         35: "35 (Very High, Long Wait)", 
                         40: "40 (Not Worth It, Very Long Wait)",
-                        60: "60 (Could Break the bot)"
+                        60: "60 (This is too much, don't do it)",
+                        80: "80 (This could break the bot)",
+                        100: "100 (What is wrong with you?)",
+                        120: "120 (Way to kill the invironment)",
                     }
         steps = [discord.SelectOption(label=label, value=key) for key, label in step_values.items()]
         return Commands.SettingsSelect(bot, "Choose Steps", steps, self.cfgscale_setting, settings_data, model_list)
@@ -309,16 +345,24 @@ class Commands(commands.Cog):
         async def callback(self, interaction: discord.Interaction):
             selected_value = self.values[0]
             
-            # If the selected value is for showing more models, this block will execute
-            if selected_value == "Show more models...":
-                next_select_menu = await self.bot.get_cog("Commands").model_setting(self.bot, self.settings_data, start=self.start + 25)
+            # <<< EDIT HERE: Handle the "Show more models..." option
+            if selected_value == 'Show more models...':
+                next_select_menu = await self.bot.get_cog("Commands").model_setting(self.bot, interaction, self.settings_data, start=self.start + 25)
                 view = discord.ui.View()
                 view.add_item(next_select_menu)
                 embed = discord.Embed(title=f"Setting for {next_select_menu.placeholder}", description="Choose an option.")
                 await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+                return
             else:
-                # Update settings_data with the current selected value
-                self.settings_data[self.placeholder] = selected_value
+                # <<< EDIT HERE: Save the selected model if a specific model was clicked
+                self.settings_data['Choose a Model'] = selected_value
+
+                # Handle the transition to the next setting (steps)
+                next_select_menu = self.next_setting(self.bot, self.settings_data, self.model_list)
+                view = discord.ui.View()
+                view.add_item(next_select_menu)
+                embed = discord.Embed(title=f"Setting for {next_select_menu.placeholder}", description="Choose an option.")
+                await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
                 
                 # Initialize the embed for the current setting
                 #embed = discord.Embed(title=f"Setting for {self.placeholder}", description="Choose an option.")
@@ -399,6 +443,14 @@ class Commands(commands.Cog):
                 
                 # Send the embed
                 await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+
+    async def random_prompt(self, interaction: discord.Interaction):
+        """Generate a random prompt.
+        Args:
+            interaction: The Discord interaction object.
+        """
+        # TODO: Add the logic to read a file and make an openai api call to generate a prompt
+        pass
 
     class Txt2imgModal(Modal):
         def __init__(self, bot, interaction):

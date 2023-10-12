@@ -17,7 +17,7 @@ class Buttons(commands.Cog):
 
     class ImageButtons(View):
         def __init__(self, bot, interaction, payload, message_id=None):
-            super().__init__(timeout=45)  # set the timeout to 45 seconds
+            super().__init__(timeout=120)  # set the timeout to 120 seconds
             self.bot = bot
             self.payload = payload
             self.message_id = message_id
@@ -27,7 +27,7 @@ class Buttons(commands.Cog):
             asyncio.create_task(self.disable_buttons())
 
         async def disable_buttons(self):
-            await asyncio.sleep(45)
+            await asyncio.sleep(120)
             channel = self.bot.get_channel(self.channel_id)
             if channel:
                 original_message = await channel.fetch_message(self.message_id)
@@ -119,17 +119,6 @@ class Buttons(commands.Cog):
                 options.append(option)
             super().__init__(placeholder='Choose an image to use as a reference', options=options)
 
-            # TODO: Test these parameters
-            """Most Likely Essential Parameters:
-                lastparam_input_model
-                selected_model
-                lastparam_input_width
-                lastparam_input_height
-
-            Potentially Optional but Important:
-                lastparam_input_aspectratio
-                lastparam_input_prompt"""
-
         async def callback(self, interaction):
             await interaction.response.defer()
             # Get the selected image file
@@ -149,7 +138,7 @@ class Buttons(commands.Cog):
                 "width": self.payload.get('width') * 2,
                 "height": self.payload.get('height') * 2,
                 "images": 1,
-                "steps": 40,
+                "steps": 80,
             }
             self.payload.update(payload)
             print(f"Payload from upscale: {self.payload}")
