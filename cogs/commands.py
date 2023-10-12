@@ -444,7 +444,7 @@ class Commands(commands.Cog):
                 embed.set_footer(text="Use the menu below to make your selection, or press the 'skip' option.")
                 
                 # Send the embed
-                await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+                await interaction.followup.send(embed=embed, view=view, ephemeral=True)
 
     class Txt2imgModal(Modal):
         def __init__(self, bot, interaction, random_prompt=None, random_negative=None):
