@@ -72,7 +72,7 @@ class Buttons(commands.Cog):
         @discord.ui.button(style=ButtonStyle.danger, label="Delete", custom_id="delete", row=1)
         async def delete(self, interaction, button):
             # Delete the message
-            await interaction.response.channel.send("Embed deleted", ephemeral=True)
+            await interaction.response.send_message("Your shame has been deleted", ephemeral=True)
             await interaction.message.delete()
 
         @discord.ui.button(style=ButtonStyle.secondary, label="Generate From Source Image", custom_id="choose_img", row=2)
