@@ -450,6 +450,8 @@ class Commands(commands.Cog):
         def __init__(self, bot, interaction, ran_prompt, ran_negative):
             super().__init__(title="Enter Prompt")
             self.bot = bot
+            print(f"\nDebug: ran_prompt is {ran_prompt}\n\n")  # Debugging line
+            print(f"Debug: ran_negative is {ran_negative}\n\n")  # Debugging line
 
             self.prompt = TextInput(label='Enter your prompt', style=discord.TextStyle.paragraph,
                                     default=ran_prompt,
