@@ -25,7 +25,6 @@ class Commands(commands.Cog):
         """Initialize the Commands cog."""
         self.bot = bot
 
-    from typing import Dict, Any
 
     @app_commands.command(name="dream", description="Press ENTER to Generate an image")
     @app_commands.describe(ai_assistance='Want AI to rewrite prompt?', change_settings='Do you want to edit settings?')
@@ -65,10 +64,12 @@ class Commands(commands.Cog):
 
         else:
             # Display the modal for text to image conversion
-            ai = self.bot.get_cog("AIPromptGenerator")
-            random_prompt, random_negative = await ai.random_prompt(interaction)
-            modal = Commands.Txt2imgModal(self.bot, interaction, random_prompt, random_negative)
+            modal = Commands.Txt2imgModal(self.bot, interaction, "", "")
             await interaction.response.send_modal(modal)
+            ai = self.bot.get_cog("AIPromptGenerator")
+            random_prompt, random_negative = await ai.gen_random_prompt(interaction)
+            modal = Commands.Txt2imgModal(self.bot, interaction, random_prompt, random_negative)
+            await interaction.edit_original_response(modal=modal)
 
     async def get_model_list(self) -> List[Dict[str, Any]]:
         """Fetch the list of available models from the API.
@@ -197,11 +198,9 @@ class Commands(commands.Cog):
             options = [
                 discord.SelectOption(label=model['title'], value=model['name']) for model in model_list
             ]
-            # Initialize the next_setting function (replace this with the actual function)
-            next_setting = self.bot.get_cog("Commands").steps_setting  # Replace with the next setting function
             # Create an instance of SettingsSelect
             model_select_menu = Commands.SettingsSelect(bot=self.bot, placeholder='Choose a Model', 
-                                            options=options, next_setting=next_setting, 
+                                            options=options, next_setting=self.next_setting, 
                                             settings_data=self.settings_data, model_list=model_list)
             # Create a view and add the select menu
             view = discord.ui.View()
@@ -346,6 +345,7 @@ class Commands(commands.Cog):
             selected_value = self.values[0]
             
             # Handle the "Show more models..." option
+            
             if selected_value == 'Show more models...':
                 next_select_menu = await self.bot.get_cog("Commands").model_setting(self.bot, interaction, self.settings_data, start=self.start + 25)
                 view = discord.ui.View()
@@ -358,7 +358,9 @@ class Commands(commands.Cog):
                 self.settings_data['Choose a Model'] = selected_value
 
                 # Handle the transition to the next setting (steps)
+                print(f"Debug: self.next_setting is {self.next_setting}")
                 next_select_menu = self.next_setting(self.bot, self.settings_data, self.model_list)
+
                 view = discord.ui.View()
                 view.add_item(next_select_menu)
                 embed = discord.Embed(title=f"Setting for {next_select_menu.placeholder}", description="Choose an option.")
@@ -434,7 +436,7 @@ class Commands(commands.Cog):
                     user_id = str(interaction.user.id)  # Convert user ID to string
                     Commands.user_settings[user_id]["settings_data"].update(self.settings_data)
                     ai = self.bot.get_cog("AIPromptGenerator")
-                    random_prompt, random_negative = await ai.random_prompt(interaction)
+                    random_prompt, random_negative = await ai.gen_random_prompt(interaction)
                     modal = Commands.Txt2imgModal(self.bot, interaction, random_prompt, random_negative)
                     await interaction.response.send_modal(modal)
                     return
@@ -447,7 +449,7 @@ class Commands(commands.Cog):
                 await interaction.followup.send(embed=embed, view=view, ephemeral=True)
 
     class Txt2imgModal(Modal):
-        def __init__(self, bot, interaction, random_prompt=None, random_negative=None):
+        def __init__(self, bot, interaction, random_prompt="Prompt", random_negative="Negative"):
             super().__init__(title="Enter Prompt")
             self.bot = bot
 

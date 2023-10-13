@@ -76,7 +76,7 @@ class AIPromptGenerator(commands.Cog):
         print(f"Debug: returned negative = {negative}\n\n")
         return prompt, negative        
     
-    async def random_prompt(self, interaction: Any) -> Tuple[Optional[str], Optional[str]]:
+    async def gen_random_prompt(self, interaction: Any) -> Tuple[Optional[str], Optional[str]]:
         """Generate a random prompt using GPT-3.
         Returns:
             A tuple containing the generated prompt and negative prompt.
@@ -88,8 +88,8 @@ class AIPromptGenerator(commands.Cog):
         prompt_text = response['choices'][0]['message']['content'].strip()
         print(f"Debug: prompt_text = {prompt_text}\n\n")
 
-        # Use the new split_prompt method to split the text into 'prompt' and 'negative'
-        prompt, negative = self.split_prompt(prompt_text, "This is the rewritten Prompt:", "This is the rewritten Negative:")
+        # Split the text into 'prompt' and 'negative'
+        prompt, negative = self.split_prompt(prompt_text, "This is the random Prompt:", "This is the random Negative:")
 
         print(f"Debug: returned prompt = {prompt}\n\n")
         print(f"Debug: returned negative = {negative}\n\n")
