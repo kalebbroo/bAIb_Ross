@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix='+', intents=intents)
 
-random_prompt, random_negative = None, None
+bot.ran_prompt, bot.ran_negative = None, None
 
 load_dotenv()
 BOT_TOKEN = os.getenv('BOT_TOKEN')
