@@ -24,8 +24,8 @@ class Commands(commands.Cog):
     def __init__(self, bot: commands.Bot):
         """Initialize the Commands cog."""
         self.bot = bot
-        self.ran_prompt = bot.random_prompt
-        self.ran_negative = bot.random_negative
+        self.ran_prompt = bot.ran_prompt
+        self.ran_negative = bot.ran_negative
 
     @app_commands.command(name="dream", description="Press ENTER to Generate an image")
     @app_commands.describe(ai_assistance='Want AI to rewrite prompt?', change_settings='Do you want to edit settings?')
