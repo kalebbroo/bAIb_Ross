@@ -65,7 +65,7 @@ class Commands(commands.Cog):
 
         else:
             # Display the modal for text to image conversion
-            modal = Commands.Txt2imgModal(self.bot, interaction, self.random_prompt, self.random_negative)
+            modal = Commands.Txt2imgModal(self.bot, interaction, self.ran_prompt, self.ran_negative)
             await interaction.response.send_modal(modal)
 
 
