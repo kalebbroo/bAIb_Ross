@@ -9,6 +9,8 @@ from dotenv import load_dotenv
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix='+', intents=intents)
 
+random_prompt, random_negative = None, None
+
 load_dotenv()
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 
@@ -38,6 +40,11 @@ async def showcase(bot, image_data, info, channel_id):
 
     return thread
 
+async def generate_random_prompt():
+    ai = bot.get_cog("AIPromptGenerator")
+    random_prompt, random_negative = await ai.gen_random_prompt()
+    return random_prompt, random_negative
+
 async def load_extensions():
     for filename in os.listdir('./cogs'):
         if filename.endswith('.py'):
@@ -50,9 +57,10 @@ async def on_ready():
     fmt  = await bot.tree.sync()
     print(f"synced {len(fmt)} commands")
     print(f"Loaded: {len(bot.cogs)} cogs")
-    #bot.model_list = await model_autocomplete()
+    bot.ran_prompt, bot.ran_negative = await generate_random_prompt()
     bot.payloads = {}
     bot.image_timestamps = {}
+    print (bot.random_prompt, bot.random_negative)
     #print(model_list)
 
 
