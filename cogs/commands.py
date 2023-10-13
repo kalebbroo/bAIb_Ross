@@ -447,15 +447,15 @@ class Commands(commands.Cog):
                 await interaction.followup.send(embed=embed, view=view, ephemeral=True)
 
     class Txt2imgModal(Modal):
-        def __init__(self, bot, interaction, random_prompt="Prompt", random_negative="Negative"):
+        def __init__(self, bot, interaction, ran_prompt, ran_negative):
             super().__init__(title="Enter Prompt")
             self.bot = bot
 
             self.prompt = TextInput(label='Enter your prompt', style=discord.TextStyle.paragraph,
-                                    default=random_prompt,
+                                    default=ran_prompt,
                                     min_length=1, max_length=2000, required=True)
             self.negative = TextInput(label='Enter your negative', style=discord.TextStyle.paragraph,
-                                    default=random_negative,
+                                    default=ran_negative,
                                     min_length=1, max_length=2000, required=True)
             
             self.add_item(self.prompt)
