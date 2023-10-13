@@ -501,7 +501,7 @@ class Commands(commands.Cog):
             if ai_assistance:  # Checking for True explicitly
                 print("AI assistance is enabled")  # Debugging line
                 ai = self.bot.get_cog("AIPromptGenerator")
-                prompt, negative = await ai.rewrite_prompt(interaction, prompt, negative)
+                prompt, negative = await ai.rewrite_prompt(prompt, negative)
                 payload['prompt'] = prompt
                 payload['negativeprompt'] = negative
 

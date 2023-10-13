@@ -29,7 +29,7 @@ class AIPromptGenerator(commands.Cog):
         with open(filename, 'r', encoding='utf-8') as file:
             return file.read()
 
-    async def gpt_phone_home(self, interaction: discord.Interaction, instruction: str, p_n: str) -> Dict[str, Any]:
+    async def gpt_phone_home(self, instruction: str, p_n: str) -> Dict[str, Any]:
         """Make the API call using GPT-3."""
         model_list = self.openai.Model.list()  # Retrieve the list of available models (for debugging)
         print(f"\nModel List: {[model['id'] for model in model_list['data']]}\n\n") # Print the list of available models (for debugging)
@@ -45,7 +45,7 @@ class AIPromptGenerator(commands.Cog):
         )
         return response
 
-    async def rewrite_prompt(self, interaction: Any, prompt: str, negative: str) -> Tuple[Optional[str], Optional[str]]:
+    async def rewrite_prompt(self, prompt: str, negative: str) -> Tuple[Optional[str], Optional[str]]:
         """Rewrite the prompt using GPT-3.
         Args:
             interaction: The Discord interaction that triggered this.
@@ -63,7 +63,7 @@ class AIPromptGenerator(commands.Cog):
         print(f"Debug: p_n = {p_n}\n\n")
 
         # Make an API call to rewrite the prompt
-        response = await self.gpt_phone_home(interaction, self.pre_prompt, p_n)
+        response = await self.gpt_phone_home(self.pre_prompt, p_n)
 
         # After getting the API response
         prompt_text = response['choices'][0]['message']['content'].strip()
@@ -76,13 +76,13 @@ class AIPromptGenerator(commands.Cog):
         print(f"Debug: returned negative = {negative}\n\n")
         return prompt, negative        
     
-    async def gen_random_prompt(self, interaction: Any) -> Tuple[Optional[str], Optional[str]]:
+    async def gen_random_prompt(self):
         """Generate a random prompt using GPT-3.
         Returns:
             A tuple containing the generated prompt and negative prompt.
         """
         p_n = "Create a random prompt and negative with the subject being a random movie or scenery."
-        response = await self.gpt_phone_home(interaction, self.random_prompt, p_n)
+        response = await self.gpt_phone_home(self.random_prompt, p_n)
 
         # After getting the API response
         prompt_text = response['choices'][0]['message']['content'].strip()
