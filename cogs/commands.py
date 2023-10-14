@@ -65,6 +65,8 @@ class Commands(commands.Cog):
             # Display the modal for text to image conversion
             modal = Commands.Txt2imgModal(self.bot, interaction, self.bot.ran_prompt, self.bot.ran_negative)
             await interaction.response.send_modal(modal)
+            ai = self.bot.get_cog("AIPromptGenerator")
+            self.bot.ran_prompt, self.bot.ran_negative = await ai.gen_random_prompt()
 
 
     async def get_model_list(self) -> List[Dict[str, Any]]:
@@ -196,7 +198,7 @@ class Commands(commands.Cog):
             ]
             # Create an instance of SettingsSelect
             model_select_menu = Commands.SettingsSelect(bot=self.bot, placeholder='Choose a Model', 
-                                            options=options, next_setting=self.next_setting, 
+                                            options=options, next_setting=True, 
                                             settings_data=self.settings_data, model_list=model_list)
             # Create a view and add the select menu
             view = discord.ui.View()
@@ -339,9 +341,8 @@ class Commands(commands.Cog):
 
         async def callback(self, interaction: discord.Interaction):
             selected_value = self.values[0]
-            
+
             # Handle the "Show more models..." option
-            
             if selected_value == 'Show more models...':
                 next_select_menu = await self.bot.get_cog("Commands").model_setting(self.bot, interaction, self.settings_data, start=self.start + 25)
                 view = discord.ui.View()
@@ -350,107 +351,94 @@ class Commands(commands.Cog):
                 await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
                 return
             else:
-                # Save the selected model if a specific model was clicked
-                self.settings_data['Choose a Model'] = selected_value
+                # Save the selected setting in setting_data
+                self.settings_data[self.placeholder] = selected_value
 
-                # Handle the transition to the next setting (steps)
-                print(f"Debug: self.next_setting is {self.next_setting}")
+            # Prepare for the next setting
+            if self.next_setting:
+                await interaction.response.defer(ephemeral=True)
                 next_select_menu = self.next_setting(self.bot, self.settings_data, self.model_list)
-
                 view = discord.ui.View()
                 view.add_item(next_select_menu)
-                embed = discord.Embed(title=f"Setting for {next_select_menu.placeholder}", description="Choose an option.")
-                await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+            else:
+                user_id = str(interaction.user.id)
+                Commands.user_settings[user_id]["settings_data"].update(self.settings_data)
+                modal = Commands.Txt2imgModal(self.bot, interaction, self.bot.ran_prompt, self.bot.ran_negative)
+                await interaction.response.send_modal(modal)
+                ai = self.bot.get_cog("AIPromptGenerator")
+                self.bot.ran_prompt, self.bot.ran_negative = await ai.gen_random_prompt()
+                return
                 
-                # Initialize the embed for the current setting
-                #embed = discord.Embed(title=f"Setting for {self.placeholder}", description="Choose an option.")
-                match self.placeholder:
-                    case "Choose Steps":
-                        embed = discord.Embed(
-                            title="CFG Scale Setting",
-                            description="""This parameter can be seen as the “Creativity vs. Prompt” scale. Lower numbers give the AI more freedom to be creative, 
-                                            while higher numbers force it to stick more to the prompt.
-                            
-                                        CFG 2 - 4: Creative, but might be too distorted and not follow the prompt. Can be fun and useful for short prompts
-                                        CFG 5 - 8: Recommended for most prompts. Good balance between creativity and guided generation
-                                        CFG 9 - 10: When you're sure that your prompt is detailed and very clear on what you want the image to look like
-                                        CFG 11 - 20: Not generally recommended almost never usable""",
-                            color=discord.Color.purple()
-                        )
-                        embed.set_image(url="https://i0.wp.com/blog.openart.ai/wp-content/uploads/2023/02/Screen-Shot-2023-02-13-at-5.25.57-PM.png?resize=768%2C213&ssl=1")
-                        embed.add_field(name="Tip for Beginners", 
-                                        value="Try different scales to explore various artistic effects.")
+            # Initialize the embed for the current setting
+            match self.placeholder:
+                case "Choose Steps":
+                    embed = discord.Embed(
+                        title="CFG Scale Setting",
+                        description="""This parameter can be seen as the “Creativity vs. Prompt” scale. Lower numbers give the AI more freedom to be creative, 
+                                        while higher numbers force it to stick more to the prompt.
+                        
+                                    CFG 2 - 4: Creative, but might be too distorted and not follow the prompt. Can be fun and useful for short prompts
+                                    CFG 5 - 8: Recommended for most prompts. Good balance between creativity and guided generation
+                                    CFG 9 - 10: When you're sure that your prompt is detailed and very clear on what you want the image to look like
+                                    CFG 11 - 20: Not generally recommended almost never usable""",
+                        color=discord.Color.purple()
+                    )
+                    embed.set_image(url="https://i0.wp.com/blog.openart.ai/wp-content/uploads/2023/02/Screen-Shot-2023-02-13-at-5.25.57-PM.png?resize=768%2C213&ssl=1")
+                    embed.add_field(name="Tip for Beginners", 
+                                    value="Try different scales to explore various artistic effects.")
 
-                    case "Choose CFG Scale":
-                        embed = discord.Embed(
-                            title="LoRA Configuration",
-                            description="""LoRA stands for Low-Rank Adaptation. It allows you to use low-rank adaptation technology to quickly fine-tune diffusion models. 
-                            To put it in simple terms, the LoRA training model makes it easier to train Stable Diffusion on different concepts, 
-                            such as characters or a specific style. These trained models then can be exported and used by others in their own generations.
-                            You want a specific celeberity? Use a LoRA model trained on that celeberity. You want a specific style? Use a LoRA model trained on that style.
-                            
-                            SD 1.5 (512x512) LoRA can only be used with 1.5 models. SD XL (1024x1024) LoRA can only be used with XL models. Ask for more to be added!!""",
-                            color=discord.Color.purple()
-                        )
-                        embed.set_image(url="https://techpp.com/wp-content/uploads/2022/10/how-to-train-stable-diffusion.jpg")
-                        embed.add_field(name="Tip for Beginners", 
-                                        value="If you're unsure, just skip this setting.")
+                case "Choose CFG Scale":
+                    embed = discord.Embed(
+                        title="LoRA Configuration",
+                        description="""LoRA stands for Low-Rank Adaptation. It allows you to use low-rank adaptation technology to quickly fine-tune diffusion models. 
+                        To put it in simple terms, the LoRA training model makes it easier to train Stable Diffusion on different concepts, 
+                        such as characters or a specific style. These trained models then can be exported and used by others in their own generations.
+                        You want a specific celeberity? Use a LoRA model trained on that celeberity. You want a specific style? Use a LoRA model trained on that style.
+                        
+                        SD 1.5 (512x512) LoRA can only be used with 1.5 models. SD XL (1024x1024) LoRA can only be used with XL models. Ask for more to be added!!""",
+                        color=discord.Color.purple()
+                    )
+                    embed.set_image(url="https://techpp.com/wp-content/uploads/2022/10/how-to-train-stable-diffusion.jpg")
+                    embed.add_field(name="Tip for Beginners", 
+                                    value="If you're unsure, just skip this setting.")
 
-                    case "Choose LORA":
-                        embed = discord.Embed(
-                            title="Embedding Options",
-                            description="""What is an Embedding?
-                            The embedding layer encodes inputs such as text prompts into low-dimensional vectors that map features of an object. 
-                            These vectors guide the Stable Diffusion model to produce images to match the user's input.
-                            Do you want specific poses or angles? Use a pose embedding. Do you want specific colors? Use a color embedding.
-                            Ask for more to be added!!""",
-                            color=discord.Color.purple()
-                        )
-                        embed.set_image(url="https://149868225.v2.pressablecdn.com/wp-content/uploads/2023/06/212048-1024x859.jpg")
-                        embed.add_field(name="Tip for Beginners", 
-                                        value="If you're unsure, just skip this setting.")
+                case "Choose LORA":
+                    embed = discord.Embed(
+                        title="Embedding Options",
+                        description="""What is an Embedding?
+                        The embedding layer encodes inputs such as text prompts into low-dimensional vectors that map features of an object. 
+                        These vectors guide the Stable Diffusion model to produce images to match the user's input.
+                        Do you want specific poses or angles? Use a pose embedding. Do you want specific colors? Use a color embedding.
+                        Ask for more to be added!!""",
+                        color=discord.Color.purple()
+                    )
+                    embed.set_image(url="https://149868225.v2.pressablecdn.com/wp-content/uploads/2023/06/212048-1024x859.jpg")
+                    embed.add_field(name="Tip for Beginners", 
+                                    value="If you're unsure, just skip this setting.")
 
-                    case "Choose Embeddings":
-                        embed = discord.Embed(
-                            title="Image Size Selection",
-                            description="""This setting allows you to choose the dimensions of 
-                            the output image. Different sizes will have an impact on the processing 
-                            time and quality. Please not depending on the model, you will not get good image results with all sizes.
-                            It is better to use the default size (1:1) and upscale an image you like.""",
-                            color=discord.Color.orange()
-                        )
-                        embed.add_field(name="Tip for Beginners", 
-                                        value="Start with 1:1 so it will use the default size of the chosen model.")
+                case "Choose Embeddings":
+                    embed = discord.Embed(
+                        title="Image Size Selection",
+                        description="""This setting allows you to choose the dimensions of 
+                        the output image. Different sizes will have an impact on the processing 
+                        time and quality. Please not depending on the model, you will not get good image results with all sizes.
+                        It is better to use the default size (1:1) and upscale an image you like.""",
+                        color=discord.Color.orange()
+                    )
+                    embed.add_field(name="Tip for Beginners", 
+                                    value="Start with 1:1 so it will use the default size of the chosen model.")
 
-                    # Prepare for the next setting
-                if self.next_setting:
-                    next_select_menu = self.next_setting(self.bot, self.settings_data, self.model_list)
-                    view = discord.ui.View()
-                    view.add_item(next_select_menu)
-                else:
-                    # If there's no next setting send modal
-                    user_id = str(interaction.user.id)  # Convert user ID to string
-                    Commands.user_settings[user_id]["settings_data"].update(self.settings_data)
-                    ai = self.bot.get_cog("AIPromptGenerator")
-                    random_prompt, random_negative = await ai.gen_random_prompt(interaction)
-                    modal = Commands.Txt2imgModal(self.bot, interaction, random_prompt, random_negative)
-                    await interaction.response.send_modal(modal)
-                    return
-                
-                # Common fields that appear in all embeds
-                embed.add_field(name="Note", value="Remember, these settings will affect both the processing time and the output quality.")
-                embed.set_footer(text="Use the menu below to make your selection, or press the 'skip' option.")
-                
-                # Send the embed
-                await interaction.followup.send(embed=embed, view=view, ephemeral=True)
+            # Common fields that appear in all embeds
+            embed.add_field(name="Note", value="Remember, these settings will affect both the processing time and the output quality.")
+            embed.set_footer(text="Use the menu below to make your selection, or press the 'skip' option.")
+            
+            # Send the embed
+            await interaction.followup.send(embed=embed, view=view, ephemeral=True)
 
     class Txt2imgModal(Modal):
         def __init__(self, bot, interaction, ran_prompt, ran_negative):
             super().__init__(title="Enter Prompt")
             self.bot = bot
-            print(f"\nDebug: ran_prompt is {ran_prompt}\n\n")  # Debugging line
-            print(f"Debug: ran_negative is {ran_negative}\n\n")  # Debugging line
-
             self.prompt = TextInput(label='Enter your prompt', style=discord.TextStyle.paragraph,
                                     default=ran_prompt,
                                     min_length=1, max_length=2000, required=True)
