@@ -187,7 +187,7 @@ class Commands(commands.Cog):
             self.index = (self.index + 1) % len(self.models)
             await self.send_model_embed(interaction)
 
-        @discord.ui.button(style=discord.ButtonStyle.secondary, label="Choose Model From List (faster)", row=2)
+        @discord.ui.button(style=discord.ButtonStyle.secondary, label="Choose From List (Know what you want?)", row=2)
         async def generate_model_list(self, interaction, button):
             model_list = await self.bot.get_cog("Commands").get_model_list()
             options = [discord.SelectOption(label=model['title'], value=model['name']) for model in model_list[:24]]
@@ -359,7 +359,7 @@ class Commands(commands.Cog):
             # Prepare for the next setting
             if self.next_setting:
                 await interaction.response.defer(ephemeral=True)
-                next_select_menu = self.next_setting(self.bot.get_cog("Commands"), self.bot, self.settings_data, self.model_list)
+                next_select_menu = self.next_setting(self.bot, self.settings_data, self.model_list)
                 view = discord.ui.View()
                 view.add_item(next_select_menu)
             else:
