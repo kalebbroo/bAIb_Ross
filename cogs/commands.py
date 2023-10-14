@@ -338,12 +338,18 @@ class Commands(commands.Cog):
         async def callback(self, interaction: discord.Interaction):
             selected_value = self.values[0]
 
+            # Initialize the embed with a default title and description
+            embed = discord.Embed(
+                title=f"Change Settings",
+                description="Choose an option.",
+                color=discord.Color.purple()
+            )
+
             # Handle the "Show more models..." option
             if selected_value == 'Show more models...':
                 next_select_menu = await self.bot.get_cog("Commands").model_setting(self.bot, interaction, self.settings_data, start=self.start + 24)
                 view = discord.ui.View()
                 view.add_item(next_select_menu)
-                embed = discord.Embed(title=f"Setting for {next_select_menu.placeholder}", description="Choose an option.")
                 await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
                 return
             else:
@@ -423,6 +429,15 @@ class Commands(commands.Cog):
                     )
                     embed.add_field(name="Tip for Beginners", 
                                     value="Start with 1:1 so it will use the default size of the chosen model.")
+                    
+                case _:
+                    # This will catch all other values of 'self.placeholder'
+                    embed = discord.Embed(
+                        title="Unrecognized Setting",
+                        description="An unrecognized setting was chosen.",
+                        color=discord.Color.red()
+                    )
+                    print(f"Unrecognized setting: {self.placeholder}")  # Debugging line
 
             # Common fields that appear in all embeds
             embed.add_field(name="Note", value="Remember, these settings will affect both the processing time and the output quality.")
