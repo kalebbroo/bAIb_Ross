@@ -228,7 +228,7 @@ class Commands(commands.Cog):
             options.append(discord.SelectOption(label='Show more models...', value='Show more models...'))
 
         # Initialize the next_setting function
-        next_setting = self.steps_setting  # Replace with the next setting function
+        next_setting = self.steps_setting(bot, settings_data, model_list)
 
         # Create an instance of SettingsSelect
         return Commands.SettingsSelect(bot=bot, placeholder='Choose a Model', 
