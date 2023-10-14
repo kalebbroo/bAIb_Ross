@@ -359,7 +359,7 @@ class Commands(commands.Cog):
             # Prepare for the next setting
             if self.next_setting:
                 await interaction.response.defer(ephemeral=True)
-                next_select_menu = self.next_setting(self.bot, self.settings_data, self.model_list)
+                next_select_menu = self.next_setting(self.bot.get_cog("Commands"), self.bot, self.settings_data, self.model_list)
                 view = discord.ui.View()
                 view.add_item(next_select_menu)
             else:
