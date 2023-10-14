@@ -189,17 +189,13 @@ class Commands(commands.Cog):
 
         @discord.ui.button(style=discord.ButtonStyle.secondary, label="Choose Model From List (faster)", row=2)
         async def generate_model_list(self, interaction, button):
-            # Fetch the model list from your bot's command cog
             model_list = await self.bot.get_cog("Commands").get_model_list()
-            
-            # Prepare options for the SettingsSelect
-            options = [
-                discord.SelectOption(label=model['title'], value=model['name']) for model in model_list
-            ]
-            # Create an instance of SettingsSelect
+            options = [discord.SelectOption(label=model['title'], value=model['name']) for model in model_list[:24]]
+            options.append(discord.SelectOption(label="Show more models...", value="Show more models..."))
+
             model_select_menu = Commands.SettingsSelect(bot=self.bot, placeholder='Choose a Model', 
-                                            options=options, next_setting=True, 
-                                            settings_data=self.settings_data, model_list=model_list)
+                                            options=options, next_setting=True,
+                                            settings_data=self.settings_data, model_list=model_list, start=0)
             # Create a view and add the select menu
             view = discord.ui.View()
             view.add_item(model_select_menu)
@@ -344,7 +340,7 @@ class Commands(commands.Cog):
 
             # Handle the "Show more models..." option
             if selected_value == 'Show more models...':
-                next_select_menu = await self.bot.get_cog("Commands").model_setting(self.bot, interaction, self.settings_data, start=self.start + 25)
+                next_select_menu = await self.bot.get_cog("Commands").model_setting(self.bot, interaction, self.settings_data, start=self.start + 24)
                 view = discord.ui.View()
                 view.add_item(next_select_menu)
                 embed = discord.Embed(title=f"Setting for {next_select_menu.placeholder}", description="Choose an option.")
