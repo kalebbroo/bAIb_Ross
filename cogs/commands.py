@@ -430,14 +430,19 @@ class Commands(commands.Cog):
                     embed.add_field(name="Tip for Beginners", 
                                     value="Start with 1:1 so it will use the default size of the chosen model.")
                     
-                case _:
-                    # This will catch all other values of 'self.placeholder'
+                case "Choose a Model":
                     embed = discord.Embed(
-                        title="Unrecognized Setting",
-                        description="An unrecognized setting was chosen.",
-                        color=discord.Color.red()
-                    )
-                    print(f"Unrecognized setting: {self.placeholder}")  # Debugging line
+                            title="Step Selection",
+                            description="""The 'Steps' setting controls the number of iterations 
+                            the algorithm will perform. A higher number generally means better 
+                            quality but will require more time to process.""",
+                            color=discord.Color.purple()
+                        )
+                    embed.set_image(url="https://i0.wp.com/blog.openart.ai/wp-content/uploads/2023/02/Screen-Shot-2023-02-13-at-5.11.28-PM.png?resize=1024%2C602&ssl=1")
+                    embed.add_field(name="Tip for Beginners", 
+                                    value="Start with a lower number of steps `10` to get quicker results, then increase for better quality.")
+                    embed.add_field(name="Note", value="Remember, these settings will affect both the processing time and the output quality.")
+                    embed.set_footer(text="Use the menu below to make your selection, or press the 'skip' option.")
 
             # Common fields that appear in all embeds
             embed.add_field(name="Note", value="Remember, these settings will affect both the processing time and the output quality.")
