@@ -194,7 +194,7 @@ class Commands(commands.Cog):
             options.append(discord.SelectOption(label="Show more models...", value="Show more models..."))
 
             model_select_menu = Commands.SettingsSelect(bot=self.bot, placeholder='Choose a Model', 
-                                            options=options, next_setting=True,
+                                            options=options, next_setting=self.steps_setting,
                                             settings_data=self.settings_data, model_list=model_list, start=0)
             # Create a view and add the select menu
             view = discord.ui.View()
@@ -228,7 +228,7 @@ class Commands(commands.Cog):
             options.append(discord.SelectOption(label='Show more models...', value='Show more models...'))
 
         # Initialize the next_setting function
-        next_setting = self.steps_setting(bot, settings_data, model_list)
+        next_setting = self.steps_setting
 
         # Create an instance of SettingsSelect
         return Commands.SettingsSelect(bot=bot, placeholder='Choose a Model', 
