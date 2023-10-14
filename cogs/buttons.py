@@ -8,10 +8,12 @@ from PIL import Image
 from datetime import datetime
 import base64
 import asyncio
+import io
 
 class Buttons(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.mdl_settings = self.bot.get_cog('ModelSettings')
 
     """Buttons for the image grid embed"""
 
@@ -176,6 +178,106 @@ class Buttons(commands.Cog):
 
             # Generate more images from the selected image
             await self.bot.get_cog('APICalls').call_collect(interaction, self.payload)
+
+    """Buttons for Choosing a model"""
+
+    class ModelView(discord.ui.View):
+        """The buttons for navigating between models.
+        This view contains buttons for navigating to the previous model, selecting the current model,
+        navigating to the next model, and generating a list of available models. It allows users to 
+        interactively browse and select models and change settings before generating an image.
+        """
+        def __init__(self, bot, models, index, settings_data):
+            super().__init__(timeout=180)
+            self.bot = bot
+            self.models = models
+            self.index = index
+            self.settings_data = settings_data
+
+        async def send_model_embed(self, interaction):
+            model = self.models[self.index]
+            embed = discord.Embed(title=model.get("title", "N/A"), description=model.get("description", "N/A"), color=0x00ff00)
+            
+            image_file = None
+
+            if model.get("preview_image"):
+                base64_image_data = model.get("preview_image")
+                if base64_image_data.startswith('data:image/jpeg;base64,'):
+                    base64_image_data = base64_image_data[len('data:image/jpeg;base64,'):]
+
+                # Decode the base64 string into bytes
+                image_bytes = base64.b64decode(base64_image_data)
+                # Create a discord.File object
+                image_file = discord.File(io.BytesIO(image_bytes), filename="preview_image.jpeg")
+                embed.set_image(url="attachment://preview_image.jpeg")  # Set the image in the embed
+
+            # Add other details to the embed as you were doing before
+            embed.add_field(name="Name", value=model.get("name", "N/A"), inline=True)
+            embed.add_field(name="Standard Width", value=model.get("standard_width", "N/A"), inline=True)
+            embed.add_field(name="Standard Height", value=model.get("standard_height", "N/A"), inline=True)
+            embed.add_field(name="Trigger Phrase", value=model.get("trigger_phrase", "N/A"), inline=False)
+            embed.add_field(name="Usage Hint", value=model.get("usage_hint", "N/A"), inline=False)
+            embed.set_footer(text="Use the buttons below to navigate between models.")
+            embed.timestamp = interaction.created_at
+
+            # Send the embed
+            await interaction.followup.send(embed=embed, view=self, ephemeral=True, file=image_file)
+
+        """The buttons for navigating between model embeds."""
+
+        # TODO: fix the code so the match case matches with the correct name of the setting
+        # TODO: add the logic for LoRA and Embeddings. Maybe remove Embeddings from the code or replace it with ControlNets. Not actually sure how either of those work yet.
+
+        @discord.ui.button(style=discord.ButtonStyle.primary, label="Back", row=1)
+        async def previous_model(self, interaction, button):
+            await interaction.response.defer()
+            self.index = (self.index - 1) % len(self.models)
+            await self.send_model_embed(interaction)
+
+        @discord.ui.button(style=discord.ButtonStyle.success, label="Choose Model", row=1)
+        async def choose_model(self, interaction, button):
+            self.settings_data["Choose a Model"] = self.models[self.index]["name"]
+            next_select_menu = self.bot.get_cog("ModelSettings").steps_setting(self.bot, self.settings_data, self.models)
+            view = discord.ui.View()
+            view.add_item(next_select_menu)
+            embed = discord.Embed(
+                            title="Step Selection",
+                            description="""The 'Steps' setting controls the number of iterations 
+                            the algorithm will perform. A higher number generally means better 
+                            quality but will require more time to process.""",
+                            color=discord.Color.purple()
+                        )
+            embed.set_image(url="https://i0.wp.com/blog.openart.ai/wp-content/uploads/2023/02/Screen-Shot-2023-02-13-at-5.11.28-PM.png?resize=1024%2C602&ssl=1")
+            embed.add_field(name="Tip for Beginners", 
+                            value="Start with a lower number of steps `10` to get quicker results, then increase for better quality.")
+            embed.add_field(name="Note", value="Remember, these settings will affect both the processing time and the output quality.")
+            embed.set_footer(text="Use the menu below to make your selection, or press the 'skip' option.")
+            await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+
+        @discord.ui.button(style=discord.ButtonStyle.primary, label="Next", row=1)
+        async def next_model(self, interaction, button):
+            await interaction.response.defer()
+            self.index = (self.index + 1) % len(self.models)
+            await self.send_model_embed(interaction)
+
+        @discord.ui.button(style=discord.ButtonStyle.secondary, label="Choose From List (Know what you want?)", row=2)
+        async def generate_model_list(self, interaction, button):
+            model_list = await self.bot.get_cog("APICalls").get_model_list()
+            options = [discord.SelectOption(label=model['title'], value=model['name']) for model in model_list[:24]]
+            options.append(discord.SelectOption(label="Show more models...", value="Show more models..."))
+
+            model_select_menu = self.mdl_settings.SettingsSelect(bot=self.bot, placeholder='Choose a Model', 
+                                            options=options, next_setting=self.mdl_settings.steps_setting,
+                                            settings_data=self.settings_data, model_list=model_list, start=0)
+            # Create a view and add the select menu
+            view = discord.ui.View()
+            view.add_item(model_select_menu)
+
+            # Create the embed
+            embed = discord.Embed(title="XL models are better than 1.5 but take longer to gen", 
+                                description="Read the descriptions to find the best model for you.")
+            # Send the message
+            await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
 async def setup(bot):
     await bot.add_cog(Buttons(bot))

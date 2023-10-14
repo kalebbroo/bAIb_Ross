@@ -7,6 +7,7 @@ import json
 import base64
 from PIL import Image
 from io import BytesIO
+from typing import List, Dict, Any
 import discord
 import logging
 import aiohttp
@@ -181,6 +182,47 @@ class APICalls(commands.Cog):
             full_traceback = traceback.format_exc()
             logging.error(f"An error occurred: {e}\nFull Traceback: {full_traceback}")
             print(f"An exception occurred: {e}\nFull Traceback: {full_traceback}")
+
+    # TODO: Remove redundant code now that its in the same cog
+    async def get_model_list(self) -> List[Dict[str, Any]]:
+        """Fetch the list of available models from the API.
+        Returns:
+            A list of dictionaries containing model information.
+        """
+        url = f"{SWARM_URL}/API/ListModels"
+        api_cog = self.bot.get_cog("APICalls")  # Get a reference to the APICalls Cog
+        session_id = await api_cog.get_session()  # Use the get_session method from APICalls Cog
+        
+        params = {
+            "path": "",
+            "depth": 2,
+            "session_id": session_id
+        }
+        # Use the session from APICalls Cog
+        async with api_cog.session.post(url, json=params) as response:
+            if response.status != 200:
+                raise Exception(f"Failed to get model list. HTTP Status Code: {response.status}, Response Content: {await response.text()}")
+            data = await response.json()
+            model_list = [
+                {
+                    "title": file.get("title"),
+                    "name": file.get("name"),
+                    "standard_width": file.get("standard_width"),
+                    "standard_height": file.get("standard_height"),
+                    "description": file.get("description"),
+                    "preview_image": file.get("preview_image"),
+                    "trigger_phrase": file.get("trigger_phrase"),
+                    "usage_hint": file.get("usage_hint"),
+                }
+                for file in data.get("files", [])
+            ]
+            # Sort the model list by 'title'
+            model_list.sort(key=lambda x: int(x['title'].split()[0].replace('.', '')))
+            #titles = [model['title'] for model in model_list]
+            #print(titles)
+            print(f"Model list contains {len(model_list)} models")
+            
+            return model_list
 
 async def setup(bot: commands.Bot) -> None:
     """Setup function to add the Cog to the bot.

@@ -31,8 +31,8 @@ class AIPromptGenerator(commands.Cog):
 
     async def gpt_phone_home(self, instruction: str, p_n: str) -> Dict[str, Any]:
         """Make the API call using GPT-3."""
-        model_list = self.openai.Model.list()  # Retrieve the list of available models (for debugging)
-        print(f"\nModel List: {[model['id'] for model in model_list['data']]}\n\n") # Print the list of available models (for debugging)
+        #model_list = self.openai.Model.list()  # Retrieve the list of available models (for debugging)
+        #print(f"\nModel List: {[model['id'] for model in model_list['data']]}\n\n") # Print the list of available models (for debugging)
         # Make an API call to rewrite the prompt
         response = self.openai.ChatCompletion.create(
             model="gpt-3.5-turbo-0301",
@@ -60,20 +60,20 @@ class AIPromptGenerator(commands.Cog):
         
         # Combine the modified prompt and negative into one string
         p_n = f"{user_prompt}\n\n{user_negative}"
-        print(f"Debug: p_n = {p_n}\n\n")
+        #print(f"Debug: p_n = {p_n}\n\n")
 
         # Make an API call to rewrite the prompt
         response = await self.gpt_phone_home(self.pre_prompt, p_n)
 
         # After getting the API response
         prompt_text = response['choices'][0]['message']['content'].strip()
-        print(f"Debug: prompt_text = {prompt_text}\n\n")
+        #print(f"Debug: prompt_text = {prompt_text}\n\n")
 
         # Use the new split_prompt method to split the text into 'prompt' and 'negative'
         prompt, negative = self.split_prompt(prompt_text, "This is the rewritten Prompt:", "This is the rewritten Negative:")
 
-        print(f"Debug: returned prompt = {prompt}\n\n")
-        print(f"Debug: returned negative = {negative}\n\n")
+        #print(f"Debug: returned prompt = {prompt}\n\n")
+        #print(f"Debug: returned negative = {negative}\n\n")
         return prompt, negative        
     
     async def gen_random_prompt(self):
@@ -86,13 +86,13 @@ class AIPromptGenerator(commands.Cog):
 
         # After getting the API response
         prompt_text = response['choices'][0]['message']['content'].strip()
-        print(f"Debug: prompt_text = {prompt_text}\n\n")
+        #print(f"Debug: prompt_text = {prompt_text}\n\n")
 
         # Split the text into 'prompt' and 'negative'
         prompt, negative = self.split_prompt(prompt_text, "This is the random Prompt:", "This is the random Negative:")
 
-        print(f"Debug: returned prompt = {prompt}\n\n")
-        print(f"Debug: returned negative = {negative}\n\n")
+        #print(f"Debug: returned prompt = {prompt}\n\n")
+        #print(f"Debug: returned negative = {negative}\n\n")
         return prompt, negative
     
     def split_prompt(self, prompt_text: str, prompt_label: str, negative_label: str) -> Tuple[Optional[str], Optional[str]]:
