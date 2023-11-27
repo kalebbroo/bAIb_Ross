@@ -122,7 +122,25 @@ class Commands(commands.Cog):
 
             # API call to generate image
             await api_call.call_collect(interaction, payload)
+    
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        """Handle the on_message event.
+        Args:
+            message: The Discord message object.
+        """
+        if message.author == self.bot.user:
+            return
 
+        # Check if the bot is mentioned
+        if self.bot.user.mentioned_in(message):
+            # Extract the message text, excluding the mention
+            content = message.content.replace(f'<@!{self.bot.user.id}>', '').strip()
+            
+            # Respond with a custom message
+            await message.channel.send(f"You said: {content}")
+        else:
+            return
 
 # The setup function to add the cog to the bot
 async def setup(bot: commands.Bot):

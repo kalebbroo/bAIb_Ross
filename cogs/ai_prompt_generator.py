@@ -118,6 +118,23 @@ class AIPromptGenerator(commands.Cog):
             prompt, negative = None, None
 
         return prompt, negative
+    
+    async def gpt_what_users_want(self, message: discord.Message) -> None:
+        """Make the API call using GPT-3."""
+        # Make an api call to determine what the user wants. Do they want a response in text or an image?
+        async with self.bot.typing():
+            pre_prompt = "What do you want?"
+            payload = await create_payload()
+            response = await self.gpt_phone_home(self.pre_prompt, message.content)
+            # if response contains the text "generte_text=True" just send the respose as channel.send
+            if "generate_text=True" in response['choices'][0]['text']:
+                await message.channel.send(response['choices'][0]['text'].replace("generate_text=True", ""))
+            #else if text contains the text "generate_image-True" send an api request to Stable diffusion to make an imge
+            elif "generate_image=True" in response['choices'][0]['text']:
+                await api_call.call_collect(interaction, payload)
+            # else if text contains the text "generate_video=True" send an api request to Stable diffusion to make a video
+            elif "generate_video=True" in response['choices'][0]['text']:
+                await api_call.call_collect(interaction, payload)
 
 async def setup(bot: commands.Bot) -> None:
     """Setup function to add the Cog to the bot.
