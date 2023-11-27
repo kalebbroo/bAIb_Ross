@@ -19,7 +19,7 @@ class Buttons(commands.Cog):
 
     class ImageButtons(View):
         def __init__(self, bot, interaction, payload, message_id=None):
-            super().__init__(timeout=120)  # set the timeout to 120 seconds
+            super().__init__(timeout=220)  # set the button timeout
             self.bot = bot
             self.payload = payload
             self.message_id = message_id
@@ -278,6 +278,31 @@ class Buttons(commands.Cog):
                                 description="Read the descriptions to find the best model for you.")
             # Send the message
             await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+            
+    class ConfirmationView(discord.ui.View):
+        def __init__(self, bot, payload, user_id):
+            super().__init__()
+            self.bot = bot
+            self.payload = payload
+            self.user_id = user_id
+
+        @discord.ui.button(label="Yes", style=discord.ButtonStyle.success)
+        async def confirm_button(self, button: discord.ui.Button, interaction: discord.Interaction):
+            if interaction.user.id != self.user_id:
+                return await interaction.response.send_message("You're not the one who initiated the command!", ephemeral=True)
+
+            api_call = self.bot.get_cog("APICalls")
+            await api_call.call_collect(interaction, self.payload)
+            self.stop()
+
+        @discord.ui.button(label="No", style=discord.ButtonStyle.danger)
+        async def cancel_button(self, button: discord.ui.Button, interaction: discord.Interaction):
+            if interaction.user.id != self.user_id:
+                return await interaction.response.send_message("You're not the one who initiated the command!", ephemeral=True)
+
+            await interaction.response.send_message("Operation cancelled.", ephemeral=True)
+            self.stop()
+
 
 async def setup(bot):
     await bot.add_cog(Buttons(bot))

@@ -41,11 +41,17 @@ class APICalls(commands.Cog):
 
     @staticmethod
     def create_payload(session_id: str, prompt: Optional[str] = None, negativeprompt: Optional[str] = None, 
-                       images: int = 4, donotsave: bool = True, model: str = "OfficialStableDiffusion/v1-5-pruned-emaonly.safetensors", 
-                       width: int = 512, height: int = 512, cfgscale: int = 7, upscale: Optional[bool] = False,
-                       steps: int = 20, seed: int = -1, enableaitemplate: Optional[Any] = None, 
-                       init_image: Optional[str] = None, init_image_creativity: Optional[float] = None,
-                       lora: Optional[str] = None, embedding: Optional[str] = None) -> Dict:
+                    images: int = 4, donotsave: bool = True, model: str = "thinkdiffusionxl_v10.safetensors", 
+                    width: int = 1024, height: int = 1024, cfgscale: int = 7, upscale: Optional[bool] = False,
+                    steps: int = 15, seed: int = -1, enableaitemplate: Optional[Any] = None, 
+                    init_image: Optional[str] = None, init_image_creativity: Optional[float] = None,
+                    lora: Optional[str] = None, embedding: Optional[str] = None, 
+                    video_format: Optional[str] = None, video_frames: Optional[int] = None, 
+                    video_fps: Optional[int] = None, video_steps: Optional[int] = None, 
+                    video_cfg: Optional[float] = None, video_min_cfg: Optional[float] = None, 
+                    video_motion_bucket: Optional[int] = None, sampler: Optional[str] = None, 
+                    scheduler: Optional[str] = None, aspect_ratio: Optional[str] = None, 
+                    video_model: Optional[str] = None) -> Dict:
         """Create a payload for an API call.
         Args:
             session_id: The session ID for the API call.
@@ -64,28 +70,51 @@ class APICalls(commands.Cog):
             init_image_creativity: The creativity level for the initial image.
             lora: The LORA setting (if any).
             embedding: The embedding (if any).
+            sampler: The sampling method for the video.
+            scheduler: The scheduling method for the video.
+            aspect_ratio: The aspect ratio of the video.
+            video_model: The specific model used for video generation.
+            video_format: The format of the video.
+            video_frames: The number of frames in the video.
+            video_fps: The frames per second of the video.
+            video_steps: The number of steps for the video.
+            video_cfg: The configuration for the video.
+            video_min_cfg: The minimum configuration for the video.
+            video_motion_bucket: The motion bucket for the video.
         Returns:
             The created payload.
         """
         base_payload = {
-            "session_id": session_id,
-            "images": images,
-            "donotsave": donotsave,
-            "seed": seed,
-            "prompt": prompt,
-            "negativeprompt": negativeprompt,
-            "model": model,
-            "width": width,
-            "height": height,
-            "cfgscale": cfgscale,
-            "steps": steps,
-            "enableaitemplate": enableaitemplate,
-            "init_image": init_image,
-            "init_image_creativity": init_image_creativity,
-            "upscale": upscale,
-            "lora": lora,
-            "embedding": embedding,
-        }
+                "session_id": session_id,
+                "images": images,
+                "donotsave": donotsave,
+                "seed": seed,
+                "prompt": prompt,
+                "negativeprompt": negativeprompt,
+                "model": model,
+                "width": width,
+                "height": height,
+                "cfgscale": cfgscale,
+                "steps": steps,
+                "enableaitemplate": enableaitemplate,
+                "init_image": init_image,
+                "init_image_creativity": init_image_creativity,
+                "upscale": upscale,
+                "lora": lora,
+                "embedding": embedding,
+                "sampler": sampler,
+                "scheduler": scheduler,
+                "aspect_ratio": aspect_ratio,
+                # Video-specific parameters
+                "video_model": video_model,
+                "video_format": video_format,
+                "video_frames": video_frames,
+                "video_fps": video_fps,
+                "video_steps": video_steps,
+                "video_cfg": video_cfg,
+                "video_min_cfg": video_min_cfg,
+                "video_motion_bucket": video_motion_bucket,
+            }
         return {k: v for k, v in base_payload.items() if v is not None}
 
     async def call_collect(self, interaction: discord.Interaction, payload: Dict) -> None:
@@ -100,7 +129,7 @@ class APICalls(commands.Cog):
 
         # Handling WebSocket connection and image generation
         try:
-            async with websockets.connect(uri, ping_interval=210, ping_timeout=320, max_size=2**21) as ws:
+            async with websockets.connect(uri, ping_interval=1800, ping_timeout=1810, max_size=2**21) as ws:
                 await ws.send(json.dumps(payload))
                 print(ws.max_size)
                 #print("Sent payload to WebSocket")

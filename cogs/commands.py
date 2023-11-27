@@ -3,6 +3,8 @@ from discord.ext import commands
 from discord import app_commands
 from discord.ui import Button, View, Select, Modal, TextInput
 from typing import List, Dict, Any
+import base64
+import re
 
 
 class Commands(commands.Cog):
@@ -122,25 +124,91 @@ class Commands(commands.Cog):
 
             # API call to generate image
             await api_call.call_collect(interaction, payload)
+            
+    async def image_to_base64(image_path):
+        with open(image_path, "rb") as image_file:
+            encoded_string = base64.b64encode(image_file.read()).decode("utf-8")
+        return encoded_string
     
     @commands.Cog.listener()
     async def on_message(self, message):
-        """Handle the on_message event.
-        Args:
-            message: The Discord message object.
-        """
         if message.author == self.bot.user:
             return
 
-        # Check if the bot is mentioned
         if self.bot.user.mentioned_in(message):
-            # Extract the message text, excluding the mention
             content = message.content.replace(f'<@!{self.bot.user.id}>', '').strip()
-            
-            # Respond with a custom message
-            await message.channel.send(f"You said: {content}")
-        else:
-            return
+            api_call = self.bot.get_cog("APICalls")
+            ai = self.bot.get_cog("AIPromptGenerator")
+
+            async with self.bot.typing():
+                try:
+                    with open('baib_ross.txt', 'r', encoding='utf-8') as file:
+                        pre_prompt = file.read()
+                except FileNotFoundError:
+                    await message.channel.send("Sorry, there was an error processing your request.")
+                    return
+
+                response = await ai.gpt_phone_home(pre_prompt, content)
+                for line in response['choices'][0]['text'].split('\n'): # Get generation type
+                    if line.startswith('generate_type='):
+                        generate_type = line.split('=')[1]
+                        break
+                response = re.sub(r'^generate_type=.*\n?', '', response, flags=re.MULTILINE)
+
+                match generate_type:
+                    case "text":
+                        # Handle text generation
+                        await message.channel.send(response)
+                    case "txt2img":
+                        # Handle image generation
+                        prompt, negative = ai.split_prompt(response)
+                        session_id = await api_call.get_session()
+                        payload = api_call.create_payload(session_id, prompt=prompt, negativeprompt=negative)
+                        buttons = self.bot.get_cog("Buttons")
+                        view = buttons.ConfirmationView(self.bot, payload, message.author.id)
+                        await message.channel.send(f"Create an image with this? ```{prompt}```\n```{negative}``` Continue?", view=view)
+                    case "img2img":
+                        # Handle img2img generation
+                        if message.attachments:
+                            image_path = await message.attachments[0].save(fp="temp_image.png")  # Save the image temporarily
+                            encoded_image = await Commands.image_to_base64(image_path)
+                            payload = api_call.create_payload(session_id, init_image=encoded_image)
+                    case "txt2video":
+                        # Handle video generation
+                        prompt, negative = ai.split_prompt(response)
+                        session_id = await api_call.get_session()
+                        payload = api_call.create_payload(session_id, prompt=prompt, negativeprompt=negative, 
+                                                        video_format="gif", video_frames=25, video_fps=6, 
+                                                        video_model="OfficialStableDiffusion/svd_xt.safetensors", video_steps=15, 
+                                                        video_cfg=2.5, video_min_cfg=1, video_motion_bucket="127"
+                                                        )
+                        buttons = self.bot.get_cog("Buttons")
+                        view = buttons.ConfirmationView(self.bot, payload, message.author.id)
+                        await message.channel.send(f"Create a video with this? ```{prompt}```\n```{negative}``` Continue?", view=view)
+                    case "img2video":
+                        # Handle img2video generation
+                        if message.attachments:
+                            image_path = await message.attachments[0].save(fp="temp_image.png")
+                            encoded_image = await Commands.image_to_base64(image_path)
+                            payload = api_call.create_payload(session_id, init_image=encoded_image,
+                                                            prompt=prompt, negativeprompt=negative, 
+                                                            video_format="gif", video_frames=25, video_fps=6, 
+                                                            video_model="OfficialStableDiffusion/svd_xt.safetensors", video_steps=15, 
+                                                            video_cfg=2.5, video_min_cfg=1, video_motion_bucket="127"
+                                                            )
+                    case "upscale":
+                        # Handle upscale
+                        if message.attachments:
+                            image_path = await message.attachments[0].save(fp="temp_image.png")
+                            encoded_image = await Commands.image_to_base64(image_path)
+                            payload = api_call.create_payload(session_id, init_image=encoded_image,
+                                                            width=payload["width"] * 2, height=payload["height"] * 2)
+                    case _:
+                        # Handle any other cases or unknown types
+                        print(f"Unknown generate_type: {generate_type}")
+                        await message.channel.send("Something went wrong. Please try again.")
+
+
 
 # The setup function to add the cog to the bot
 async def setup(bot: commands.Bot):
