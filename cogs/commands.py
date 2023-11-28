@@ -140,7 +140,7 @@ class Commands(commands.Cog):
             api_call = self.bot.get_cog("APICalls")
             ai = self.bot.get_cog("AIPromptGenerator")
 
-            async with self.bot.typing():
+            async with message.channel.typing():
                 try:
                     with open('baib_ross.txt', 'r', encoding='utf-8') as file:
                         pre_prompt = file.read()
