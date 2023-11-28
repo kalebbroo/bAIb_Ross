@@ -87,13 +87,15 @@ class GenerateImage(commands.Cog):
             session_id=self.session_id if self.session_id else api_call.session_id,
             prompt=prompt,
             negativeprompt=negativeprompt,
-            model="OfficialStableDiffusion/sd_xl_base_1.0.safetensors",
-            width=1024,
-            height=1024,
-            cfgscale=7,
-            steps=10,
+            model="OfficialStableDiffusion/sd_xl_turbo_1.0_fp16.safetensors",
+            width=512,
+            height=512,
+            cfgscale=1.6,
+            steps=3,
             seed=-1,
             init_image=init_img_base64,
+            sampler="euler_ancestral",
+            scheduler="normal",
         )
         
         await self.generate_image(bot, interaction, payload)
