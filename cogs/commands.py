@@ -149,6 +149,7 @@ class Commands(commands.Cog):
                     return
 
                 response = await ai.gpt_phone_home(pre_prompt, content)
+                print(f"Response: {response}") # Debug
                 for line in response['choices'][0]['text'].split('\n'): # Get generation type
                     if line.startswith('generate_type='):
                         generate_type = line.split('=')[1]
