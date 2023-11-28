@@ -300,7 +300,7 @@ class Buttons(commands.Cog):
                     item.disabled = True
 
             # Update the message with the disabled buttons
-            await interaction.response.edit_message(view=self)
+            await interaction.edit_original_response(view=self)
 
             self.stop()
 
@@ -316,7 +316,7 @@ class Buttons(commands.Cog):
                     item.disabled = True
 
             # Update the message with the disabled buttons
-            await interaction.response.edit_message(view=self)
+            await interaction.edit_original_response(view=self)
 
             self.stop()
 
