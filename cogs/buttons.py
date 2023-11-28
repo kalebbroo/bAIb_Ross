@@ -287,7 +287,7 @@ class Buttons(commands.Cog):
             self.user_id = user_id
 
         @discord.ui.button(label="Yes", style=discord.ButtonStyle.success)
-        async def confirm_button(self, button: discord.ui.Button, interaction: discord.Interaction):
+        async def confirm_button(self, interaction: discord.Interaction, button: discord.ui.Button):
             if interaction.user.id != self.user_id:
                 return await interaction.response.send_message("You're not the one who initiated the command!", ephemeral=True)
 
@@ -296,7 +296,7 @@ class Buttons(commands.Cog):
             self.stop()
 
         @discord.ui.button(label="No", style=discord.ButtonStyle.danger)
-        async def cancel_button(self, button: discord.ui.Button, interaction: discord.Interaction):
+        async def cancel_button(self, interaction: discord.Interaction, button: discord.ui.Button):
             if interaction.user.id != self.user_id:
                 return await interaction.response.send_message("You're not the one who initiated the command!", ephemeral=True)
 
