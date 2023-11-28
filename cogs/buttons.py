@@ -288,11 +288,20 @@ class Buttons(commands.Cog):
 
         @discord.ui.button(label="Yes", style=discord.ButtonStyle.success)
         async def confirm_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+            await interaction.response.defer(ephemeral=True)
             if interaction.user.id != self.user_id:
-                return await interaction.response.send_message("You're not the one who initiated the command!", ephemeral=True)
+                return await interaction.followup.send("You're not the one who initiated the command!", ephemeral=True)
 
             api_call = self.bot.get_cog("APICalls")
             await api_call.call_collect(interaction, self.payload)
+            # Disable the buttons
+            for item in self.children:
+                if isinstance(item, discord.ui.Button):
+                    item.disabled = True
+
+            # Update the message with the disabled buttons
+            await interaction.response.edit_message(view=self)
+
             self.stop()
 
         @discord.ui.button(label="No", style=discord.ButtonStyle.danger)
@@ -301,6 +310,14 @@ class Buttons(commands.Cog):
                 return await interaction.response.send_message("You're not the one who initiated the command!", ephemeral=True)
 
             await interaction.response.send_message("Operation cancelled.", ephemeral=True)
+            # Disable the buttons
+            for item in self.children:
+                if isinstance(item, discord.ui.Button):
+                    item.disabled = True
+
+            # Update the message with the disabled buttons
+            await interaction.response.edit_message(view=self)
+
             self.stop()
 
 
