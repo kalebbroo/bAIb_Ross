@@ -150,11 +150,12 @@ class Commands(commands.Cog):
 
                 response = await ai.gpt_phone_home(pre_prompt, content)
                 print(f"Response: {response}") # Debug
-                for line in response['choices'][0]['text'].split('\n'): # Get generation type
-                    if line.startswith('generate_type='):
-                        generate_type = line.split('=')[1]
-                        break
-                response = re.sub(r'^generate_type=.*\n?', '', response, flags=re.MULTILINE)
+                if 'choices' in response and response['choices'] and 'message' in response['choices'][0] and 'content' in response['choices'][0]['message']:
+                    content = response['choices'][0]['message']['content']
+                    for line in content.split('\n'):
+                        if line.startswith('generate_type='):
+                            generate_type = line.split('=')[1].strip()
+                            break
 
                 match generate_type:
                     case "text":
