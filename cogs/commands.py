@@ -160,7 +160,7 @@ class Commands(commands.Cog):
                 match generate_type:
                     case "text":
                         # Handle text generation
-                        await message.channel.send(response)
+                        await message.channel.send(content)
                     case "txt2img":
                         # Handle image generation
                         content = response['choices'][0]['message']['content']
