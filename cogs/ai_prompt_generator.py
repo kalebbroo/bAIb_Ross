@@ -35,7 +35,7 @@ class AIPromptGenerator(commands.Cog):
         print(f"\nModel List: {[model['id'] for model in model_list['data']]}\n\n") # Print the list of available models (for debugging)
         # Make an API call to rewrite the prompt
         response = self.openai.ChatCompletion.create(
-            model="gpt-3.5-turbo-0301",
+            model="gpt-4",
             messages=[
                 {"role": "system", "content": instruction},  # System's instructions
                 {"role": "user", "content": p_n},  # User's prompt and negative
