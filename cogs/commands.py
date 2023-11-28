@@ -163,7 +163,8 @@ class Commands(commands.Cog):
                         await message.channel.send(response)
                     case "txt2img":
                         # Handle image generation
-                        prompt, negative = ai.split_prompt(response)
+                        content = response['choices'][0]['message']['content']
+                        prompt, negative = ai.split_prompt(content, prompt_label="Prompt:", negative_label="Negative:")
                         session_id = await api_call.get_session()
                         payload = api_call.create_payload(session_id, prompt=prompt, negativeprompt=negative)
                         buttons = self.bot.get_cog("Buttons")
@@ -177,7 +178,8 @@ class Commands(commands.Cog):
                             payload = api_call.create_payload(session_id, init_image=encoded_image)
                     case "txt2video":
                         # Handle video generation
-                        prompt, negative = ai.split_prompt(response)
+                        content = response['choices'][0]['message']['content']
+                        prompt, negative = ai.split_prompt(content, prompt_label="Prompt:", negative_label="Negative:")
                         session_id = await api_call.get_session()
                         payload = api_call.create_payload(session_id, prompt=prompt, negativeprompt=negative, 
                                                         video_format="gif", video_frames=25, video_fps=6, 
