@@ -31,8 +31,8 @@ class AIPromptGenerator(commands.Cog):
 
     async def gpt_phone_home(self, instruction: str, p_n: str) -> Dict[str, Any]:
         """Make the API call using GPT-3."""
-        #model_list = self.openai.Model.list()  # Retrieve the list of available models (for debugging)
-        #print(f"\nModel List: {[model['id'] for model in model_list['data']]}\n\n") # Print the list of available models (for debugging)
+        model_list = self.openai.Model.list()  # Retrieve the list of available models (for debugging)
+        print(f"\nModel List: {[model['id'] for model in model_list['data']]}\n\n") # Print the list of available models (for debugging)
         # Make an API call to rewrite the prompt
         response = self.openai.ChatCompletion.create(
             model="gpt-3.5-turbo-0301",
