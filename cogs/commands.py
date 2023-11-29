@@ -209,7 +209,13 @@ class Commands(commands.Cog):
                     case "upscale":
                         # Handle upscale
                         if message.attachments:
-                            image_path = await message.attachments[0].save("temp_image.png")
+                            try:
+                                # Try saving the image
+                                image_path = await message.attachments[0].save("temp_image.png")
+                                print(f"Image saved to: {image_path}")  # Check if this line is executed and print the path
+                            except Exception as e:
+                                print(f"Error while saving the image: {e}")
+                                return
                             encoded_image = await Commands.image_to_base64(image_path)
                             payload = api_call.create_payload(session_id, initimage=encoded_image, init_image_creativity=0.3,
                                                             width=payload["width"] * 2, height=payload["height"] * 2, 
