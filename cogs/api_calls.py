@@ -41,9 +41,9 @@ class APICalls(commands.Cog):
 
     @staticmethod
     def create_payload(session_id: str, prompt: Optional[str] = None, negativeprompt: Optional[str] = None, 
-                    images: int = 4, donotsave: bool = True, model: str = "thinkdiffusionxl_v10.safetensors", 
-                    width: int = 1024, height: int = 1024, cfgscale: int = 7, upscale: Optional[bool] = False,
-                    steps: int = 15, seed: int = -1, enableaitemplate: Optional[Any] = None, 
+                    images: int = 4, donotsave: bool = True, model: str = "turbovisionxlSuperFastXLBasedOnNew_alphaV0101Bakedvae.safetensors", 
+                    width: int = 768, height: int = 1344, cfgscale: int = 2.5, upscale: Optional[bool] = False,
+                    steps: int = 8, seed: int = -1, enableaitemplate: Optional[Any] = None, 
                     init_image: Optional[str] = None, init_image_creativity: Optional[float] = None,
                     lora: Optional[str] = None, embedding: Optional[str] = None, 
                     video_format: Optional[str] = None, video_frames: Optional[int] = None, 
