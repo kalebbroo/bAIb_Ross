@@ -261,7 +261,7 @@ class APICalls(commands.Cog):
     async def aiohttp_call_collect(self, interaction: discord.Interaction, payload: Dict) -> None:
         async with aiohttp.ClientSession() as session:
             try:
-                async with session.post(SWARM_URL, json=payload) as response:
+                async with session.post(f"{self.address}/API/GenerateText2Image", json=payload) as response:
                     if response.status == 200:
                         data = await response.json()
                         images = data.get('images', [])
