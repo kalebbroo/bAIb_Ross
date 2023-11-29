@@ -202,6 +202,9 @@ class Commands(commands.Cog):
                                                             video_model="OfficialStableDiffusion/svd_xt.safetensors", video_steps=15, 
                                                             video_cfg=2.5, video_min_cfg=1, video_motion_bucket="127"
                                                             )
+                            buttons = self.bot.get_cog("Buttons")
+                            view = buttons.ConfirmationView(self.bot, payload, message.author.id)
+                            await message.channel.send(f"Create a video with this? Continue?", view=view)
                     case "upscale":
                         # Handle upscale
                         if message.attachments:
@@ -210,6 +213,9 @@ class Commands(commands.Cog):
                             payload = api_call.create_payload(session_id, initimage=encoded_image, init_image_creativity=0.3,
                                                             width=payload["width"] * 2, height=payload["height"] * 2, 
                                                             upscale=True, images=1, steps=60, cfgscale=10, )
+                            buttons = self.bot.get_cog("Buttons")
+                            view = buttons.ConfirmationView(self.bot, payload, message.author.id)
+                            await message.channel.send(f"Ready to upscale?", view=view)
                     case _:
                         # Handle any other cases or unknown types
                         print(f"Unknown generate_type: {generate_type}")
