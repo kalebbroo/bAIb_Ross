@@ -126,7 +126,7 @@ class APICalls(commands.Cog):
         """
         upscale = payload.get('upscale', False)
         if upscale:
-            await APICalls.aiohttp_call_collect(interaction, payload)
+            await APICalls.aiohttp_call_collect(self, interaction, payload)
             return
         #print(f"Payload: {payload}")  # Debugging line
         uri = f"ws://{self.address[7:]}/API/GenerateText2ImageWS"  # WebSocket URI for the API
