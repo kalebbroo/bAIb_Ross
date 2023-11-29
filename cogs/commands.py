@@ -173,7 +173,7 @@ class Commands(commands.Cog):
                     case "img2img":
                         # Handle img2img generation
                         if message.attachments:
-                            image_path = await message.attachments[0].save(fp="temp_image.png")  # Save the image temporarily
+                            image_path = await message.attachments[0].save("temp_image.png")  # Save the image temporarily
                             encoded_image = await Commands.image_to_base64(image_path)
                             payload = api_call.create_payload(session_id, initimage=encoded_image, 
                                                               init_image_creativity=0.3,)
@@ -194,7 +194,7 @@ class Commands(commands.Cog):
                     case "img2video":
                         # Handle img2video generation
                         if message.attachments:
-                            image_path = await message.attachments[0].save(fp="temp_image.png")
+                            image_path = await message.attachments[0].save("temp_image.png")
                             encoded_image = await Commands.image_to_base64(image_path)
                             payload = api_call.create_payload(session_id, initimage=encoded_image, upscale=True,
                                                             prompt=prompt, negativeprompt=negative, 
@@ -208,7 +208,7 @@ class Commands(commands.Cog):
                     case "upscale":
                         # Handle upscale
                         if message.attachments:
-                            image_path = await message.attachments[0].save(fp="temp_image.png")
+                            image_path = await message.attachments[0].save("temp_image.png")
                             encoded_image = await Commands.image_to_base64(image_path)
                             payload = api_call.create_payload(session_id, initimage=encoded_image, init_image_creativity=0.3,
                                                             width=payload["width"] * 2, height=payload["height"] * 2, 
