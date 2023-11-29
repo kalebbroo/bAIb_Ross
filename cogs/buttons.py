@@ -290,25 +290,26 @@ class Buttons(commands.Cog):
         async def confirm_button(self, interaction: discord.Interaction, button: discord.ui.Button):
             if interaction.user.id != self.user_id:
                 return await interaction.response.send_message("You're not the one who initiated the command!", ephemeral=True)
+            async with interaction.message.channel.typing():
+                await interaction.response.defer()
+                # Delete the original message
+                await interaction.message.delete()
 
-            # Delete the original message
-            await interaction.message.delete()
+                # Send a placeholder follow-up message
+                placeholder_embed = discord.Embed(description="Generating image, one moment please...")
+                followup_message = await interaction.followup.send(embed=placeholder_embed, wait=True)
 
-            # Send a placeholder follow-up message
-            placeholder_embed = discord.Embed(description="Generating image, one moment please...")
-            followup_message = await interaction.followup.send(embed=placeholder_embed, wait=True)
+                # Call the API to generate the image
+                api_call = self.bot.get_cog("APICalls")
+                image_file = await api_call.call_collect(interaction, self.payload)
 
-            # Call the API to generate the image
-            api_call = self.bot.get_cog("APICalls")
-            image_file = await api_call.call_collect(interaction, self.payload)
-
-            # Once the image is ready, edit the follow-up message to display the image
-            if image_file:
-                generated_image_embed = discord.Embed(title="Generated Image")
-                generated_image_embed.set_image(url=f"attachment://{image_file.filename}")
-                await followup_message.edit(embed=generated_image_embed, attachments=[image_file])
-            else:
-                await followup_message.edit(content="Failed to generate image.", embed=None)
+                # Once the image is ready, edit the follow-up message to display the image
+                if image_file:
+                    generated_image_embed = discord.Embed(title="Generated Image")
+                    generated_image_embed.set_image(url=f"attachment://{image_file.filename}")
+                    await followup_message.edit(embed=generated_image_embed, attachments=[image_file])
+                else:
+                    await followup_message.edit(content="Failed to generate image.", embed=None)
 
 
         @discord.ui.button(label="No", style=discord.ButtonStyle.danger)
