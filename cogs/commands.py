@@ -125,9 +125,12 @@ class Commands(commands.Cog):
             # API call to generate image
             await api_call.call_collect(interaction, payload)
             
-    async def image_to_base64(image_path):
-        with open(image_path, "rb") as image_file:
-            encoded_string = base64.b64encode(image_file.read()).decode("utf-8")
+    @staticmethod
+    async def image_to_base64(attachment):
+        # Read the image bytes directly from the attachment
+        image_bytes = await attachment.read()
+        # Convert these bytes to a base64-encoded string
+        encoded_string = base64.b64encode(image_bytes).decode("utf-8")
         return encoded_string
     
     @commands.Cog.listener()
@@ -173,11 +176,21 @@ class Commands(commands.Cog):
                     case "img2img":
                         # Handle img2img generation
                         if message.attachments:
-                            image_path = await message.attachments[0].save("temp_image.png")  # Save the image temporarily
-                            print(f"Image saved to: {image_path}")  # Debug print
-                            encoded_image = await Commands.image_to_base64(image_path)
-                            payload = api_call.create_payload(session_id, initimage=encoded_image, 
-                                                              init_image_creativity=0.3,)
+                            print("Attachment found, attempting to process image...")  # Confirming that this block is executed
+
+                            try:
+                                # Get the first attachment and convert it to base64
+                                attachment = message.attachments[0]
+                                encoded_image = await Commands.image_to_base64(attachment)
+                                print("Image encoded to base64.")  # Confirming successful encoding
+                                payload = api_call.create_payload(session_id, initimage=encoded_image, 
+                                                                init_image_creativity=0.3,)
+                                buttons = self.bot.get_cog("Buttons")
+                                view = buttons.ConfirmationView(self.bot, payload, message.author.id)
+                                await message.channel.send(f"Create an image with this? Continue?", view=view)
+                            except Exception as e:
+                                print(f"Error while processing the image: {e}")
+                                
                     case "txt2video":
                         # Handle video generation
                         content = response['choices'][0]['message']['content']
@@ -195,34 +208,41 @@ class Commands(commands.Cog):
                     case "img2video":
                         # Handle img2video generation
                         if message.attachments:
-                            image_path = await message.attachments[0].save("temp_image.png")
-                            encoded_image = await Commands.image_to_base64(image_path)
-                            payload = api_call.create_payload(session_id, initimage=encoded_image, upscale=True,
-                                                            prompt=prompt, negativeprompt=negative, 
-                                                            video_format="gif", video_frames=25, video_fps=6, 
-                                                            video_model="OfficialStableDiffusion/svd_xt.safetensors", video_steps=15, 
-                                                            video_cfg=2.5, video_min_cfg=1, video_motion_bucket="127"
-                                                            )
-                            buttons = self.bot.get_cog("Buttons")
-                            view = buttons.ConfirmationView(self.bot, payload, message.author.id)
-                            await message.channel.send(f"Create a video with this? Continue?", view=view)
+                            try:
+                                # Convert the attachment directly to base64
+                                encoded_image = await Commands.image_to_base64(message.attachments[0])
+                                payload = api_call.create_payload(session_id, initimage=encoded_image, upscale=True,
+                                                                prompt=prompt, negativeprompt=negative, 
+                                                                video_format="gif", video_frames=25, video_fps=6, 
+                                                                video_model="OfficialStableDiffusion/svd_xt.safetensors", video_steps=15, 
+                                                                video_cfg=2.5, video_min_cfg=1, video_motion_bucket="127"
+                                                                )
+                                buttons = self.bot.get_cog("Buttons")
+                                view = buttons.ConfirmationView(self.bot, payload, message.author.id)
+                                await message.channel.send("Create a video with this? Continue?", view=view)
+                            except Exception as e:
+                                print(f"Error while processing the image: {e}")
+                                await message.channel.send("An error occurred while processing the image.")
+
                     case "upscale":
                         # Handle upscale
                         if message.attachments:
                             try:
-                                # Try saving the image
-                                image_path = await message.attachments[0].save("temp_image.png")
-                                print(f"Image saved to: {image_path}")  # Check if this line is executed and print the path
+                                # Convert the attachment directly to base64
+                                encoded_image = await Commands.image_to_base64(message.attachments[0])
+                                # You might need to adjust how width and height are set here
+                                width = 1024  # Placeholder, set to your default or extracted width
+                                height = 768  # Placeholder, set to your default or extracted height
+                                payload = api_call.create_payload(session_id, initimage=encoded_image, init_image_creativity=0.3,
+                                                                width=width * 2, height=height * 2, 
+                                                                upscale=True, images=1, steps=60, cfgscale=10)
+                                buttons = self.bot.get_cog("Buttons")
+                                view = buttons.ConfirmationView(self.bot, payload, message.author.id)
+                                await message.channel.send("Ready to upscale?", view=view)
                             except Exception as e:
-                                print(f"Error while saving the image: {e}")
-                                return
-                            encoded_image = await Commands.image_to_base64(image_path)
-                            payload = api_call.create_payload(session_id, initimage=encoded_image, init_image_creativity=0.3,
-                                                            width=payload["width"] * 2, height=payload["height"] * 2, 
-                                                            upscale=True, images=1, steps=60, cfgscale=10, )
-                            buttons = self.bot.get_cog("Buttons")
-                            view = buttons.ConfirmationView(self.bot, payload, message.author.id)
-                            await message.channel.send(f"Ready to upscale?", view=view)
+                                print(f"Error while processing the image: {e}")
+                                await message.channel.send("An error occurred while processing the image.")
+
                     case _:
                         # Handle any other cases or unknown types
                         print(f"Unknown generate_type: {generate_type}")
