@@ -183,6 +183,7 @@ class Commands(commands.Cog):
                                 attachment = message.attachments[0]
                                 encoded_image = await Commands.image_to_base64(attachment)
                                 print("Image encoded to base64.")  # Confirming successful encoding
+                                session_id = await api_call.get_session()
                                 payload = api_call.create_payload(session_id, initimage=encoded_image, 
                                                                 init_image_creativity=0.3,)
                                 buttons = self.bot.get_cog("Buttons")
@@ -211,6 +212,7 @@ class Commands(commands.Cog):
                             try:
                                 # Convert the attachment directly to base64
                                 encoded_image = await Commands.image_to_base64(message.attachments[0])
+                                session_id = await api_call.get_session()
                                 payload = api_call.create_payload(session_id, initimage=encoded_image, upscale=True,
                                                                 prompt=prompt, negativeprompt=negative, 
                                                                 video_format="gif", video_frames=25, video_fps=6, 
@@ -230,6 +232,7 @@ class Commands(commands.Cog):
                             try:
                                 # Convert the attachment directly to base64
                                 encoded_image = await Commands.image_to_base64(message.attachments[0])
+                                session_id = await api_call.get_session()
                                 # You might need to adjust how width and height are set here
                                 width = 1024  # Placeholder, set to your default or extracted width
                                 height = 768  # Placeholder, set to your default or extracted height
