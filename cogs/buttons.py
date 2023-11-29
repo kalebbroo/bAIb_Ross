@@ -136,14 +136,14 @@ class Buttons(commands.Cog):
                 "upscale": "true",
                 "initimage": image,
                 "init_image_creativity": 0,
-                "model": self.payload.get('model'),
+                "model": "juggernautXL_version6Rundiffusion.safetensors",
                 "width": self.payload.get('width') * 2,
                 "height": self.payload.get('height') * 2,
                 "images": 1,
-                "steps": 80,
+                "steps": 60,
             }
             self.payload.update(payload)
-            print(f"Payload from upscale: {self.payload}")
+            #print(f"Payload from upscale: {self.payload}")
 
             # Call the API method to upscale the image
             await self.bot.get_cog('APICalls').call_collect(interaction, self.payload)
@@ -319,6 +319,13 @@ class Buttons(commands.Cog):
             await interaction.edit_original_response(view=self)
 
             self.stop()
+
+        @discord.ui.button(label="Edit", style=discord.ButtonStyle.secondary)
+        # Open a modal to edit the prompt and negative
+        async def edit_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+            if interaction.user.id != self.user_id:
+                return await interaction.response.send_message("You're not the one who initiated the command!", ephemeral=True)
+
 
 
 async def setup(bot):

@@ -175,7 +175,8 @@ class Commands(commands.Cog):
                         if message.attachments:
                             image_path = await message.attachments[0].save(fp="temp_image.png")  # Save the image temporarily
                             encoded_image = await Commands.image_to_base64(image_path)
-                            payload = api_call.create_payload(session_id, init_image=encoded_image)
+                            payload = api_call.create_payload(session_id, initimage=encoded_image, 
+                                                              init_image_creativity=0.3,)
                     case "txt2video":
                         # Handle video generation
                         content = response['choices'][0]['message']['content']
@@ -184,7 +185,8 @@ class Commands(commands.Cog):
                         payload = api_call.create_payload(session_id, prompt=prompt, negativeprompt=negative, 
                                                         video_format="gif", video_frames=25, video_fps=6, 
                                                         video_model="OfficialStableDiffusion/svd_xt.safetensors", video_steps=15, 
-                                                        video_cfg=2.5, video_min_cfg=1, video_motion_bucket="127"
+                                                        video_cfg=2.5, video_min_cfg=1, video_motion_bucket="127",
+                                                        width=1344, height=768,
                                                         )
                         buttons = self.bot.get_cog("Buttons")
                         view = buttons.ConfirmationView(self.bot, payload, message.author.id)
@@ -194,7 +196,7 @@ class Commands(commands.Cog):
                         if message.attachments:
                             image_path = await message.attachments[0].save(fp="temp_image.png")
                             encoded_image = await Commands.image_to_base64(image_path)
-                            payload = api_call.create_payload(session_id, init_image=encoded_image,
+                            payload = api_call.create_payload(session_id, initimage=encoded_image, upscale=True,
                                                             prompt=prompt, negativeprompt=negative, 
                                                             video_format="gif", video_frames=25, video_fps=6, 
                                                             video_model="OfficialStableDiffusion/svd_xt.safetensors", video_steps=15, 
@@ -205,8 +207,9 @@ class Commands(commands.Cog):
                         if message.attachments:
                             image_path = await message.attachments[0].save(fp="temp_image.png")
                             encoded_image = await Commands.image_to_base64(image_path)
-                            payload = api_call.create_payload(session_id, init_image=encoded_image,
-                                                            width=payload["width"] * 2, height=payload["height"] * 2)
+                            payload = api_call.create_payload(session_id, initimage=encoded_image, init_image_creativity=0.3,
+                                                            width=payload["width"] * 2, height=payload["height"] * 2, 
+                                                            upscale=True, images=1, steps=60, cfgscale=10, )
                     case _:
                         # Handle any other cases or unknown types
                         print(f"Unknown generate_type: {generate_type}")
