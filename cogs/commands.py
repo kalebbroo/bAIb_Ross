@@ -126,7 +126,7 @@ class Commands(commands.Cog):
             await api_call.call_collect(interaction, payload)
             
     async def image_to_base64(image_path):
-        with open(image_path) as image_file:
+        with open(image_path, "rb") as image_file:
             encoded_string = base64.b64encode(image_file.read()).decode("utf-8")
         return encoded_string
     
@@ -174,6 +174,7 @@ class Commands(commands.Cog):
                         # Handle img2img generation
                         if message.attachments:
                             image_path = await message.attachments[0].save("temp_image.png")  # Save the image temporarily
+                            print(f"Image saved to: {image_path}")  # Debug print
                             encoded_image = await Commands.image_to_base64(image_path)
                             payload = api_call.create_payload(session_id, initimage=encoded_image, 
                                                               init_image_creativity=0.3,)
