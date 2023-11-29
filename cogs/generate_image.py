@@ -104,7 +104,7 @@ class GenerateImage(commands.Cog):
 
     async def generate_image(self, bot, interaction, payload):
         api_call = bot.get_cog("APICalls")
-        await api_call.call_collect(interaction, payload)
+        await api_call.aiohttp_call_collect(interaction, payload)
         
 
 

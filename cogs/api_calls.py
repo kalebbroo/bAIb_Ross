@@ -12,6 +12,7 @@ import discord
 import logging
 import aiohttp
 import os
+import re
 
 SWARM_URL = os.getenv('SWARM_URL')  # Get the SWARM URL from the environment variables
 
@@ -123,6 +124,10 @@ class APICalls(commands.Cog):
             interaction: The Discord interaction that triggered this.
             payload: The payload for the API call.
         """
+        upscale = payload.get('upscale', False)
+        if upscale:
+            await APICalls.aiohttp_call_collect(interaction, payload)
+            return
         #print(f"Payload: {payload}")  # Debugging line
         uri = f"ws://{self.address[7:]}/API/GenerateText2ImageWS"  # WebSocket URI for the API
         image_grid_cog = self.bot.get_cog("ImageGrid")  # Get the ImageGrid Cog
@@ -252,6 +257,37 @@ class APICalls(commands.Cog):
             print(f"Model list contains {len(model_list)} models")
             
             return model_list
+        
+    async def aiohttp_call_collect(self, interaction: discord.Interaction, payload: Dict) -> None:
+        async with aiohttp.ClientSession() as session:
+            try:
+                async with session.post(SWARM_URL, json=payload) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        images = data.get('images', [])
+                        for image_data in images:
+                            content_type = re.search(r'data:(image\/\w+);base64,', image_data)
+                            file_extension = "png"
+                            if content_type:
+                                mime_type = content_type.group(1)
+                                if mime_type == "image/gif":
+                                    file_extension = "gif"
+                                else:
+                                    file_extension = mime_type.split('/')[-1]  # Gets 'jpg', 'png', etc.
+
+                            image_bytes = base64.b64decode(re.sub(r'^data:image\/\w+;base64,', '', image_data))
+                            with BytesIO(image_bytes) as image_file:
+                                image_file.seek(0)
+                                # Send image as attachment in Discord
+                                file = discord.File(fp=image_file, filename=f"generated_image.{file_extension}")
+                                embed = discord.Embed(title="Here is your generated image")
+                                await interaction.followup.send(embed=embed, file=file)
+                    else:
+                        error_message = f"API call failed with status code: {response.status}"
+                        await interaction.followup.send(error_message)
+            except Exception as e:
+                await interaction.followup.send(f"An error occurred during the API call: {e}")
+
 
 async def setup(bot: commands.Bot) -> None:
     """Setup function to add the Cog to the bot.
