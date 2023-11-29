@@ -159,6 +159,8 @@ class Commands(commands.Cog):
                         if line.startswith('generate_type='):
                             generate_type = line.split('=')[1].strip()
                             break
+                        elif not generate_type:
+                            generate_type = "text"
 
                 match generate_type:
                     case "text":
@@ -198,10 +200,10 @@ class Commands(commands.Cog):
                         prompt, negative = ai.split_prompt(content, prompt_label="Prompt:", negative_label="Negative:")
                         session_id = await api_call.get_session()
                         payload = api_call.create_payload(session_id, prompt=prompt, negativeprompt=negative, 
-                                                        video_format="gif", video_frames=15, video_fps=6, upscale=True,
-                                                        video_model="OfficialStableDiffusion/svd_xt.safetensors", video_steps=5, 
+                                                        video_format="gif", video_frames=5, video_fps=2, upscale=True,
+                                                        video_model="OfficialStableDiffusion/svd_xt.safetensors", video_steps=1, 
                                                         video_cfg=2.5, video_min_cfg=1, video_motion_bucket="127",
-                                                        width=1344, height=768,
+                                                        width=1344, height=768, images=1
                                                         )
                         buttons = self.bot.get_cog("Buttons")
                         view = buttons.ConfirmationView(self.bot, payload, message.author.id)

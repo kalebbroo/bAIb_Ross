@@ -288,44 +288,97 @@ class Buttons(commands.Cog):
 
         @discord.ui.button(label="Yes", style=discord.ButtonStyle.success)
         async def confirm_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-            await interaction.response.defer(ephemeral=True)
             if interaction.user.id != self.user_id:
-                return await interaction.followup.send("You're not the one who initiated the command!", ephemeral=True)
+                return await interaction.response.send_message("You're not the one who initiated the command!", ephemeral=True)
+            async with interaction.message.channel.typing():
+                # Disable the buttons
+                for item in self.children:
+                    if isinstance(item, discord.ui.Button):
+                        item.disabled = True
+                await interaction.edit_original_response(view=self)
 
-            api_call = self.bot.get_cog("APICalls")
-            await api_call.call_collect(interaction, self.payload)
-            # Disable the buttons
-            for item in self.children:
-                if isinstance(item, discord.ui.Button):
-                    item.disabled = True
+                # Show a placeholder message while generating the image
+                placeholder_embed = discord.Embed(description="Generating image, one moment please...")
+                await interaction.edit_original_response(embed=placeholder_embed, view=None)
 
-            # Update the message with the disabled buttons
-            await interaction.edit_original_response(view=self)
+                # Call the API to generate the image
+                api_call = self.bot.get_cog("APICalls")
+                image_file = await api_call.call_collect(interaction, self.payload)
 
-            self.stop()
+                # Once the image is ready, edit the message to display the image
+                if image_file:
+                    generated_image_embed = discord.Embed(title="Generated Image")
+                    generated_image_embed.set_image(url=f"attachment://{image_file.filename}")
+                    await interaction.edit_original_response(embed=generated_image_embed, attachments=[image_file])
+                else:
+                    await interaction.edit_original_response(content="Failed to generate image.", embed=None, attachments=[])
+
 
         @discord.ui.button(label="No", style=discord.ButtonStyle.danger)
         async def cancel_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-            if interaction.user.id != self.user_id:
-                return await interaction.response.send_message("You're not the one who initiated the command!", ephemeral=True)
+            async with interaction.message.channel.typing():
+                if interaction.user.id != self.user_id:
+                    return await interaction.response.send_message("You're not the one who initiated the command!", ephemeral=True)
+                # Disable the buttons
+                for item in self.children:
+                    if isinstance(item, discord.ui.Button):
+                        item.disabled = True
 
-            await interaction.response.send_message("Operation cancelled.", ephemeral=True)
-            # Disable the buttons
-            for item in self.children:
-                if isinstance(item, discord.ui.Button):
-                    item.disabled = True
+                # Update the message with the disabled buttons
+                await interaction.edit_original_response(view=self)
 
-            # Update the message with the disabled buttons
-            await interaction.edit_original_response(view=self)
+                await interaction.response.send_message("Operation cancelled.", ephemeral=True)
 
-            self.stop()
+                self.stop()
 
         @discord.ui.button(label="Edit", style=discord.ButtonStyle.secondary)
-        # Open a modal to edit the prompt and negative
         async def edit_button(self, interaction: discord.Interaction, button: discord.ui.Button):
             if interaction.user.id != self.user_id:
                 return await interaction.response.send_message("You're not the one who initiated the command!", ephemeral=True)
 
+            ai = self.bot.get_cog("AIPromptGenerator")
+
+            # If the prompt is not set, generate a random prompt
+            if self.payload.get('prompt') is None:
+                prompt, negative = await ai.gen_random_prompt()
+                self.payload.update({"prompt": prompt, "negativeprompt": negative})
+
+            # Create and send the modal
+            modal = Buttons.EditPromptModal(self.bot, self, self.payload)
+            await interaction.response.send_modal(modal)
+
+        class EditPromptModal(discord.ui.Modal):
+            def __init__(self, bot, view, payload):
+                super().__init__(title="Edit Prompt and Negative")
+                self.bot = bot
+                self.view = view
+                self.payload = payload
+
+                self.prompt_input = discord.ui.TextInput(
+                    label='Prompt', style=discord.TextStyle.paragraph,
+                    default=self.payload.get('prompt', ''),
+                    min_length=1, max_length=2000, required=True
+                )
+                self.negative_input = discord.ui.TextInput(
+                    label='Negative Prompt', style=discord.TextStyle.paragraph,
+                    default=self.payload.get('negativeprompt', ''),
+                    min_length=1, max_length=2000, required=False
+                )
+                self.add_item(self.prompt_input)
+                self.add_item(self.negative_input)
+
+            async def on_submit(self, interaction: discord.Interaction):
+                # Update the payload with the new values
+                self.payload['prompt'] = self.prompt_input.value
+                self.payload['negativeprompt'] = self.negative_input.value
+
+                # Update the view with the new payload
+                self.view.payload = self.payload
+
+                # Edit the original message with the updated view
+                await interaction.edit_original_response(
+                    content=f"New Prompt: ```{self.payload['prompt']}```\nNew Negative: ```{self.payload['negativeprompt']}```", 
+                    view=self.view)
 
 
 async def setup(bot):
