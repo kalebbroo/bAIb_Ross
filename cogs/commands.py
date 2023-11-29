@@ -184,7 +184,7 @@ class Commands(commands.Cog):
                                 encoded_image = await Commands.image_to_base64(attachment)
                                 print("Image encoded to base64.")  # Confirming successful encoding
                                 session_id = await api_call.get_session()
-                                payload = api_call.create_payload(session_id, initimage=encoded_image, 
+                                payload = api_call.create_payload(session_id, init_image=encoded_image, 
                                                                 init_image_creativity=0.3,)
                                 buttons = self.bot.get_cog("Buttons")
                                 view = buttons.ConfirmationView(self.bot, payload, message.author.id)
@@ -213,7 +213,7 @@ class Commands(commands.Cog):
                                 # Convert the attachment directly to base64
                                 encoded_image = await Commands.image_to_base64(message.attachments[0])
                                 session_id = await api_call.get_session()
-                                payload = api_call.create_payload(session_id, initimage=encoded_image, upscale=True,
+                                payload = api_call.create_payload(session_id, init_image=encoded_image, upscale=True,
                                                                 prompt=prompt, negativeprompt=negative, 
                                                                 video_format="gif", video_frames=25, video_fps=6, 
                                                                 video_model="OfficialStableDiffusion/svd_xt.safetensors", video_steps=15, 
@@ -236,7 +236,7 @@ class Commands(commands.Cog):
                                 # You might need to adjust how width and height are set here
                                 width = 1024  # Placeholder, set to your default or extracted width
                                 height = 768  # Placeholder, set to your default or extracted height
-                                payload = api_call.create_payload(session_id, initimage=encoded_image, init_image_creativity=0.3,
+                                payload = api_call.create_payload(session_id, init_image=encoded_image, init_image_creativity=0.3,
                                                                 width=width * 2, height=height * 2, 
                                                                 upscale=True, images=1, steps=60, cfgscale=10)
                                 buttons = self.bot.get_cog("Buttons")
