@@ -304,7 +304,7 @@ class Buttons(commands.Cog):
 
                 # Call the API to generate the image
                 api_call = self.bot.get_cog("APICalls")
-                await api_call.aiohttp_call_collect(interaction, self.payload)
+                await api_call.call_collect(interaction, self.payload)
 
 
         @discord.ui.button(label="No", style=discord.ButtonStyle.danger)

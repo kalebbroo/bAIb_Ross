@@ -41,10 +41,11 @@ class APICalls(commands.Cog):
             return self.session_id
 
     @staticmethod
-    def create_payload(session_id: str, prompt: Optional[str] = None, negativeprompt: Optional[str] = None, 
+    def create_payload(session_id: str, prompt: Optional[str] = "Photorealistic, 4k, ultra high definition, portrait", 
+                       negativeprompt: Optional[str] = "NSFW, low quality, blurry, low resolution, nipples",
                     images: int = 4, donotsave: bool = True, model: str = "turbovisionxlSuperFastXLBasedOnNew_alphaV0101Bakedvae.safetensors", 
-                    width: int = 768, height: int = 1344, cfgscale: int = 2.5, upscale: Optional[bool] = False,
-                    steps: int = 8, seed: int = -1, enableaitemplate: Optional[Any] = None, 
+                    width: int = 1344, height: int = 768, cfgscale: int = 2.5, upscale: Optional[bool] = False,
+                    steps: int = 10, seed: int = -1, enableaitemplate: Optional[Any] = None, 
                     init_image: Optional[str] = None, init_image_creativity: Optional[float] = None,
                     lora: Optional[str] = None, embedding: Optional[str] = None, 
                     video_format: Optional[str] = None, video_frames: Optional[int] = None, 
