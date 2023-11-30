@@ -267,20 +267,24 @@ class APICalls(commands.Cog):
                         images = data.get('images', [])
                         for image_data in images:
                             content_type = re.search(r'data:(image\/\w+);base64,', image_data)
-                            file_extension = "png"
-                            if content_type:
-                                mime_type = content_type.group(1)
-                                if mime_type == "image/gif":
-                                    file_extension = "gif"
-                                else:
-                                    file_extension = mime_type.split('/')[-1]  # Gets 'jpg', 'png', etc.
-
+                            file_extension = "png" if not content_type else content_type.group(1).split('/')[-1]
                             image_bytes = base64.b64decode(re.sub(r'^data:image\/\w+;base64,', '', image_data))
                             with BytesIO(image_bytes) as image_file:
                                 image_file.seek(0)
-                                # Send image as attachment in Discord
                                 file = discord.File(fp=image_file, filename=f"generated_image.{file_extension}")
-                                embed = discord.Embed(title="Here is your generated image")
+                                embed = discord.Embed(title="Generated Image", color=discord.Color.green())
+                                embed.set_image(url=f"attachment://{file.filename}")
+                                embed.set_footer(text=f"Requested by {interaction.user.display_name}", 
+                                                 icon_url=interaction.user.avatar.url)
+                                # Add additional fields for the image details
+                                embed.add_field(name="Prompt", value=payload.get("prompt", "No prompt"), inline=False)
+                                embed.add_field(name="Negative Prompt", value=payload.get("negativeprompt", 
+                                                                                          "No negative prompt"), inline=False)
+                                embed.add_field(name="Model", value=payload.get("model", "Unknown"), inline=True)
+                                embed.add_field(name="Width", value=payload.get("width", "Unknown"), inline=True)
+                                embed.add_field(name="Height", value=payload.get("height", "Unknown"), inline=True)
+                                embed.add_field(name="Steps", value=payload.get("steps", "Unknown"), inline=True)
+                                embed.add_field(name="CFG Scale", value=payload.get("cfgscale", "Unknown"), inline=True)
                                 await interaction.followup.send(embed=embed, file=file)
                     else:
                         error_message = f"API call failed with status code: {response.status}"
