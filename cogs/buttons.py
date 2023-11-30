@@ -290,13 +290,15 @@ class Buttons(commands.Cog):
         async def confirm_button(self, interaction: discord.Interaction, button: discord.ui.Button):
             if interaction.user.id != self.user_id:
                 return await interaction.response.send_message("You're not the one who initiated the command!", ephemeral=True)
+
             async with interaction.message.channel.typing():
                 await interaction.response.defer()
                 # Delete the original message
                 await interaction.message.delete()
 
                 # Send a placeholder follow-up message
-                placeholder_embed = discord.Embed(description="Generating image, one moment please...")
+                placeholder_embed = discord.Embed(description="Generating image, one moment please...", color=discord.Color.blue())
+                placeholder_embed.set_footer(text=f"Requested by {interaction.user.display_name}", icon_url=interaction.user.avatar.url)
                 followup_message = await interaction.followup.send(embed=placeholder_embed, wait=True)
 
                 # Call the API to generate the image
@@ -305,11 +307,26 @@ class Buttons(commands.Cog):
 
                 # Once the image is ready, edit the follow-up message to display the image
                 if image_file:
-                    generated_image_embed = discord.Embed(title="Generated Image")
+                    generated_image_embed = discord.Embed(title="Generated Image", color=discord.Color.green())
                     generated_image_embed.set_image(url=f"attachment://{image_file.filename}")
+                    generated_image_embed.set_footer(text=f"Requested by {interaction.user.display_name}", icon_url=interaction.user.avatar.url)
+                    generated_image_embed.add_field(name="Prompt", value=self.payload.get("prompt", "No prompt"), inline=False)
+                    generated_image_embed.add_field(name="Negative Prompt", value=self.payload.get("negativeprompt", "No negative prompt"), inline=False)
+                    # Additional details about the image
+                    generated_image_embed.add_field(name="Model", value=self.payload.get("model", "Unknown"), inline=True)
+                    generated_image_embed.add_field(name="Width", value=self.payload.get("width", "Unknown"), inline=True)
+                    generated_image_embed.add_field(name="Height", value=self.payload.get("height", "Unknown"), inline=True)
+                    generated_image_embed.add_field(name="Steps", value=self.payload.get("steps", "Unknown"), inline=True)
+                    generated_image_embed.add_field(name="CFG Scale", value=self.payload.get("cfgscale", "Unknown"), inline=True)
                     await followup_message.edit(embed=generated_image_embed, attachments=[image_file])
                 else:
-                    await followup_message.edit(content="Failed to generate image.", embed=None)
+                    error_embed = discord.Embed(
+                        title="Failed to generate image",
+                        description="An error occurred during image generation.",
+                        color=discord.Color.red()
+                    )
+                    error_embed.set_footer(text=f"Requested by {interaction.user.display_name}", icon_url=interaction.user.avatar.url)
+                    await followup_message.edit(embed=error_embed)
 
 
         @discord.ui.button(label="No", style=discord.ButtonStyle.danger)

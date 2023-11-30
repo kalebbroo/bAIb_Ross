@@ -4,7 +4,8 @@ from discord import app_commands
 from discord.ui import Button, View, Select, Modal, TextInput
 from typing import List, Dict, Any
 import base64
-import re
+from PIL import Image
+import io
 
 
 class Commands(commands.Cog):
@@ -173,26 +174,48 @@ class Commands(commands.Cog):
                         session_id = await api_call.get_session()
                         payload = api_call.create_payload(session_id, prompt=prompt, negativeprompt=negative)
                         buttons = self.bot.get_cog("Buttons")
+                        embed = discord.Embed(
+                            title="Image Generation",
+                            description=f"Create an image with this? \nPrompt: ```{prompt}```\nNegative: ```{negative}```",
+                            color=discord.Color.blue()
+                        )
+                        embed.set_footer(text=f"Requested by {message.author.display_name}", icon_url=message.author.avatar.url)
                         view = buttons.ConfirmationView(self.bot, payload, message.author.id)
-                        await message.channel.send(f"Create an image with this? ```{prompt}```\n```{negative}``` Continue?", view=view)
+                        await message.channel.send(embed=embed, view=view)
                     case "img2img":
-                        # Handle img2img generation
                         if message.attachments:
-                            print("Attachment found, attempting to process image...")  # Confirming that this block is executed
-
                             try:
                                 # Get the first attachment and convert it to base64
                                 attachment = message.attachments[0]
-                                encoded_image = await Commands.image_to_base64(attachment)
-                                print("Image encoded to base64.")  # Confirming successful encoding
+                                buffer = io.BytesIO()
+                                await attachment.save(buffer)
+                                buffer.seek(0)
+
+                                # Read the image to get its size
+                                with Image.open(buffer) as img:
+                                    width, height = img.size
+
+                                # Convert the image to base64
+                                encoded_image = base64.b64encode(buffer.getvalue()).decode('utf-8')
+
                                 session_id = await api_call.get_session()
-                                payload = api_call.create_payload(session_id, init_image=encoded_image, 
-                                                                init_image_creativity=0.3,)
+                                payload = api_call.create_payload(
+                                    session_id, init_image=encoded_image, 
+                                    init_image_creativity=0.3,
+                                    width=width, height=height
+                                )
                                 buttons = self.bot.get_cog("Buttons")
+                                embed = discord.Embed(
+                                    title="Image to Image Generation",
+                                    description="Create an image based on the uploaded image. Continue?",
+                                    color=discord.Color.green()
+                                )
+                                embed.set_footer(text=f"Requested by {message.author.display_name}", icon_url=message.author.avatar.url)
                                 view = buttons.ConfirmationView(self.bot, payload, message.author.id)
-                                await message.channel.send(f"Create an image with this? Continue?", view=view)
+                                await message.channel.send(embed=embed, view=view)
                             except Exception as e:
                                 print(f"Error while processing the image: {e}")
+                                await message.channel.send("An error occurred while processing the image.")
                                 
                     case "txt2video":
                         # Handle video generation
@@ -206,8 +229,14 @@ class Commands(commands.Cog):
                                                         width=1344, height=768, images=1
                                                         )
                         buttons = self.bot.get_cog("Buttons")
+                        embed = discord.Embed(
+                            title="Video Generation",
+                            description=f"Create a video with this? \nPrompt: ```{prompt}```\nNegative: ```{negative}```",
+                            color=discord.Color.blue()
+                        )
+                        embed.set_footer(text=f"Requested by {message.author.display_name}", icon_url=message.author.avatar.url)
                         view = buttons.ConfirmationView(self.bot, payload, message.author.id)
-                        await message.channel.send(f"Create a video with this? ```{prompt}```\n```{negative}``` Continue?", view=view)
+                        await message.channel.send(embed=embed, view=view)
                     case "img2video":
                         # Handle img2video generation
                         if message.attachments:
@@ -222,28 +251,64 @@ class Commands(commands.Cog):
                                                                 video_cfg=2.5, video_min_cfg=1, video_motion_bucket="127"
                                                                 )
                                 buttons = self.bot.get_cog("Buttons")
+                                embed = discord.Embed(
+                                    title="Image to Video Generation",
+                                    description=f"""Create a video with this? Videos are made in 
+                                                           16:9 Your image will be cropped to fit this\n
+                                                           Do you want to continue?""",
+                                    color=discord.Color.green()
+                                )
+                                embed.set_footer(text=f"Requested by {message.author.display_name}", icon_url=message.author.avatar.url)
                                 view = buttons.ConfirmationView(self.bot, payload, message.author.id)
-                                await message.channel.send("Create a video with this? Continue?", view=view)
+                                await message.channel.send(embed=embed, view=view)
                             except Exception as e:
                                 print(f"Error while processing the image: {e}")
                                 await message.channel.send("An error occurred while processing the image.")
 
                     case "upscale":
-                        # Handle upscale
                         if message.attachments:
                             try:
-                                # Convert the attachment directly to base64
-                                encoded_image = await Commands.image_to_base64(message.attachments[0])
+                                attachment = message.attachments[0]
+                                buffer = io.BytesIO()
+                                await attachment.save(buffer)
+                                buffer.seek(0)
+
+                                # Read the image to get its size
+                                with Image.open(buffer) as img:
+                                    width, height = img.size
+
+                                # Check if the image exceeds the maximum allowed dimension
+                                max_dimension = 2048
+                                if width > max_dimension or height > max_dimension:
+                                    embed = discord.Embed(
+                                        title="Upscale Cancelled",
+                                        description="The image size exceeds the maximum allowed dimensions (2048x2048) for upscaling.",
+                                        color=discord.Color.red()
+                                    )
+                                    embed.set_footer(text=f"Requested by {message.author.display_name}", icon_url=message.author.avatar.url)
+                                    await message.channel.send(embed=embed)
+                                    return
+
+                                # Convert the image to base64
+                                encoded_image = base64.b64encode(buffer.getvalue()).decode('utf-8')
+
                                 session_id = await api_call.get_session()
-                                # You might need to adjust how width and height are set here
-                                width = 1024  # Placeholder, set to your default or extracted width
-                                height = 768  # Placeholder, set to your default or extracted height
-                                payload = api_call.create_payload(session_id, init_image=encoded_image, init_image_creativity=0.3,
-                                                                width=width * 2, height=height * 2, 
-                                                                upscale=True, images=1, steps=60, cfgscale=10)
+                                payload = api_call.create_payload(
+                                    session_id, init_image=encoded_image, init_image_creativity=0.3,
+                                    width=width * 2, height=height * 2, 
+                                    upscale=True, images=1, steps=60, cfgscale=10
+                                )
+
                                 buttons = self.bot.get_cog("Buttons")
+                                embed = discord.Embed(
+                                    title="Image Upscaling",
+                                    description=f"""Ready to upscale the uploaded image? maximum allowed dimensions (2048x2048).
+                                    Dont like it? Buy me a RTX 4090 then....\nDo you want to continue?""",
+                                    color=discord.Color.orange()
+                                )
+                                embed.set_footer(text=f"Requested by {message.author.display_name}", icon_url=message.author.avatar.url)
                                 view = buttons.ConfirmationView(self.bot, payload, message.author.id)
-                                await message.channel.send("Ready to upscale?", view=view)
+                                await message.channel.send(embed=embed, view=view)
                             except Exception as e:
                                 print(f"Error while processing the image: {e}")
                                 await message.channel.send("An error occurred while processing the image.")
@@ -251,7 +316,13 @@ class Commands(commands.Cog):
                     case _:
                         # Handle any other cases or unknown types
                         print(f"Unknown generate_type: {generate_type}")
-                        await message.channel.send("Something went wrong. Please try again.")
+                        embed = discord.Embed(
+                            title="Unknown Request",
+                            description="Something went wrong. Please try again.",
+                            color=discord.Color.red()
+                        )
+                        embed.set_footer(text=f"Requested by {message.author.display_name}", icon_url=message.author.avatar.url)
+                        await message.channel.send(embed=embed)
 
 
 
