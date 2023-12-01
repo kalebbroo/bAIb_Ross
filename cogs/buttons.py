@@ -340,39 +340,38 @@ class Buttons(commands.Cog):
             modal = Buttons.EditPromptModal(self.bot, self, self.payload)
             await interaction.response.send_modal(modal)
 
-        class EditPromptModal(discord.ui.Modal):
-            def __init__(self, bot, view, payload):
-                super().__init__(title="Edit Prompt and Negative")
-                self.bot = bot
-                self.view = view
-                self.payload = payload
+    class EditPromptModal(discord.ui.Modal):
+        def __init__(self, bot, view, payload):
+            super().__init__(title="Edit Prompt and Negative")
+            self.bot = bot
+            self.view = view
+            self.payload = payload
 
-                self.prompt_input = discord.ui.TextInput(
-                    label='Prompt', style=discord.TextStyle.paragraph,
-                    default=self.payload.get('prompt', ''),
-                    min_length=1, max_length=2000, required=True
-                )
-                self.negative_input = discord.ui.TextInput(
-                    label='Negative Prompt', style=discord.TextStyle.paragraph,
-                    default=self.payload.get('negativeprompt', ''),
-                    min_length=1, max_length=2000, required=False
-                )
-                self.add_item(self.prompt_input)
-                self.add_item(self.negative_input)
+            self.prompt_input = discord.ui.TextInput(
+                label='Prompt', style=discord.TextStyle.paragraph,
+                default=self.payload.get('prompt', ''),
+                min_length=1, max_length=2000, required=True
+            )
+            self.negative_input = discord.ui.TextInput(
+                label='Negative Prompt', style=discord.TextStyle.paragraph,
+                default=self.payload.get('negativeprompt', ''),
+                min_length=1, max_length=2000, required=False
+            )
+            self.add_item(self.prompt_input)
+            self.add_item(self.negative_input)
 
-            async def on_submit(self, interaction: discord.Interaction):
-                # Update the payload with the new values
-                self.payload['prompt'] = self.prompt_input.value
-                self.payload['negativeprompt'] = self.negative_input.value
+        async def on_submit(self, interaction: discord.Interaction):
+            # Update the payload with the new values
+            self.payload['prompt'] = self.prompt_input.value
+            self.payload['negativeprompt'] = self.negative_input.value
 
-                # Update the view with the new payload
-                self.view.payload = self.payload
+            # Update the view with the new payload
+            self.view.payload = self.payload
 
-                # Edit the original message with the updated view
-                await interaction.edit_original_response(
-                    content=f"New Prompt: ```{self.payload['prompt']}```\nNew Negative: ```{self.payload['negativeprompt']}```", 
-                    view=self.view)
-
+            # Edit the original message with the updated view
+            await interaction.edit_original_response(
+                content=f"New Prompt: ```{self.payload['prompt']}```\nNew Negative: ```{self.payload['negativeprompt']}```", 
+                view=self.view)
 
 async def setup(bot):
     await bot.add_cog(Buttons(bot))
