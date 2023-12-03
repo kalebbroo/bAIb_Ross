@@ -361,6 +361,7 @@ class Buttons(commands.Cog):
             self.add_item(self.negative_input)
 
         async def on_submit(self, interaction: discord.Interaction):
+            await interaction.response.defer()
             # Update the payload with the new values
             self.payload['prompt'] = self.prompt_input.value
             self.payload['negativeprompt'] = self.negative_input.value
