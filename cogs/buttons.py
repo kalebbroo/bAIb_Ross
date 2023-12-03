@@ -371,10 +371,13 @@ class Buttons(commands.Cog):
             # Fetch the original message using the interaction's message ID
             original_message = await interaction.channel.fetch_message(interaction.message.id)
 
-            # Edit the original message with the updated view
-            await original_message.edit(
-                content=f"New Prompt: ```{self.payload['prompt']}```\nNew Negative: ```{self.payload['negativeprompt']}```", 
-                view=self.view)
+            # Create a new embed with the updated prompt and negative
+            updated_embed = discord.Embed(title="Updated Prompt and Negative", color=discord.Color.blue())
+            updated_embed.add_field(name="Prompt", value=f"```{self.payload['prompt']}```", inline=False)
+            updated_embed.add_field(name="Negative Prompt", value=f"```{self.payload['negativeprompt']}```", inline=False)
+
+            # Edit the original message with the updated embed and view
+            await original_message.edit(embed=updated_embed, view=self.view)
 
 async def setup(bot):
     await bot.add_cog(Buttons(bot))
