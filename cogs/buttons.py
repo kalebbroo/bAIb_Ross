@@ -337,11 +337,11 @@ class Buttons(commands.Cog):
                 self.payload.update({"prompt": prompt, "negativeprompt": negative})
 
             # Create and send the modal
-            modal = Buttons.EditPromptModal(self.bot, self, self.payload)
+            modal = Buttons.EditPromptModal(self.bot, interaction, self, self.payload)
             await interaction.response.send_modal(modal)
 
     class EditPromptModal(discord.ui.Modal):
-        def __init__(self, bot, view, payload):
+        def __init__(self, bot, interaction, view, payload):
             super().__init__(title="Edit Prompt and Negative")
             self.bot = bot
             self.view = view
@@ -368,8 +368,11 @@ class Buttons(commands.Cog):
             # Update the view with the new payload
             self.view.payload = self.payload
 
+            # Fetch the original message using the interaction's message ID
+            original_message = await interaction.channel.fetch_message(interaction.message.id)
+
             # Edit the original message with the updated view
-            await interaction.edit_original_response(
+            await original_message.edit(
                 content=f"New Prompt: ```{self.payload['prompt']}```\nNew Negative: ```{self.payload['negativeprompt']}```", 
                 view=self.view)
 
