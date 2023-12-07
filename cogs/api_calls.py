@@ -42,10 +42,10 @@ class APICalls(commands.Cog):
 
     @staticmethod
     def create_payload(session_id: str, prompt: Optional[str] = "Photorealistic, 4k, ultra high definition, portrait", 
-                       negativeprompt: Optional[str] = "NSFW, low quality, blurry, low resolution, nipples",
-                    images: int = 4, donotsave: bool = True, model: str = "turbovisionxlSuperFastXLBasedOnNew_alphaV0101Bakedvae.safetensors", 
+                       negativeprompt: Optional[str] = "NSFW, low quality, blurry, low resolution, nipples, extra limbs",
+                    images: int = 4, donotsave: bool = True, model: str = "turbovisionxlSuperFastXLBasedOnNew_tvxlV20Bakedvae.safetensors", 
                     width: int = 1024, height: int = 1024, cfgscale: int = 2.5, upscale: Optional[bool] = False,
-                    steps: int = 10, seed: int = -1, enableaitemplate: Optional[Any] = None, 
+                    steps: int = 6, seed: int = -1, enableaitemplate: Optional[Any] = None, 
                     init_image: Optional[str] = None, init_image_creativity: Optional[float] = None,
                     lora: Optional[str] = None, embedding: Optional[str] = None, 
                     video_format: Optional[str] = None, video_frames: Optional[int] = None, 
@@ -258,6 +258,44 @@ class APICalls(commands.Cog):
             print(f"Model list contains {len(model_list)} models")
             
             return model_list
+        
+    async def get_lora_list(self) -> List[Dict[str, Any]]:
+        """Fetch the list of available LoRAs from the API.
+        Returns:
+            A list of dictionaries containing LoRA information.
+        """
+        url = f"{SWARM_URL}/API/ListModels"
+        api_cog = self.bot.get_cog("APICalls")
+        session_id = await api_cog.get_session()
+        
+        params = {
+            "path": "",
+            "depth": 1,
+            "subtype": "LoRA",
+            "session_id": session_id
+        }
+        async with api_cog.session.post(url, json=params) as response:
+            if response.status != 200:
+                raise Exception(f"Failed to get LoRA list. HTTP Status Code: {response.status}, Response Content: {await response.text()}")
+            data = await response.json()
+            lora_list = [
+                {
+                    "title": file.get("title"),
+                    "name": file.get("name"),
+                    # Add other fields as required
+                }
+                for file in data.get("files", [])
+            ]
+            print(f"LoRA list contains {len(lora_list)} LoRAs")
+            
+            return lora_list
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        """Handle the on_message event."""
+        if message.author.bot:
+            return
+        if message.content.startswith("-test"):
+            await self.get_lora_list()
         
     async def aiohttp_call_collect(self, interaction: discord.Interaction, payload: Dict) -> None:
         async with aiohttp.ClientSession() as session:
