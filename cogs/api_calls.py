@@ -286,7 +286,8 @@ class APICalls(commands.Cog):
                 }
                 for file in data.get("files", [])
             ]
-            print(f"LoRA list contains {len(lora_list)} LoRAs")
+            print(f"LoRA list contains {len(lora_list)} LoRAs\n{[lora['title'] for lora in lora_list]}")
+            print(f"\n{lora_list}\n")
             
             return lora_list
     @commands.Cog.listener()
