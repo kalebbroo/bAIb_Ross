@@ -262,7 +262,7 @@ class Buttons(commands.Cog):
 
         @discord.ui.button(style=discord.ButtonStyle.secondary, label="Choose From List (Know what you want?)", row=2)
         async def generate_model_list(self, interaction, button):
-            model_list = await self.bot.get_cog("APICalls").get_model_list()
+            model_list = await self.bot.get_cog("APICalls").get_models("models")
             options = [discord.SelectOption(label=model['title'], value=model['name']) for model in model_list[:24]]
             options.append(discord.SelectOption(label="Show more models...", value="Show more models..."))
 

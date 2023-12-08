@@ -60,9 +60,6 @@ async def on_ready():
     bot.ran_prompt, bot.ran_negative = await generate_random_prompt()
     bot.payloads = {}
     bot.image_timestamps = {}
-    #print (bot.ran_prompt, bot.ran_negative)
-    #print(model_list)
-
 
 
 if __name__ == "__main__":

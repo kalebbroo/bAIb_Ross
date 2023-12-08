@@ -46,7 +46,7 @@ class Commands(commands.Cog):
             api_call = self.bot.get_cog("APICalls")
             # Initialize self.models and self.index if they are not already initialized
             if not hasattr(self, 'models') or not self.models:
-                self.models: List[Dict[str, Any]] = await api_call.get_model_list()
+                self.models: List[Dict[str, Any]] = await api_call.get_models("model")
             self.index: int = 1  # Or whatever index you want for the initial model
             
             settings_data = Commands.user_settings[user_id]["settings_data"]

@@ -16,7 +16,7 @@ class ModelSettings(commands.Cog):
     """
 
     async def model_setting(self, bot, interaction, settings_data, start=0):
-        model_list = await self.get_model_list()
+        model_list = await self.get_models("model")
 
         # Prepare options for the SettingsSelect
         # Only take 24 models starting from the index 'start'

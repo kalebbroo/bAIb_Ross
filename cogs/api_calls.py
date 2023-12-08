@@ -218,27 +218,31 @@ class APICalls(commands.Cog):
             logging.error(f"An error occurred: {e}\nFull Traceback: {full_traceback}")
             print(f"An exception occurred: {e}\nFull Traceback: {full_traceback}")
 
-    # TODO: Remove redundant code now that its in the same cog
-    async def get_model_list(self) -> List[Dict[str, Any]]:
-        """Fetch the list of available models from the API.
+
+    async def get_models(self, model_type: str = "model") -> List[Dict[str, Any]]:
+        """Fetch the list of available models or LoRAs from the API.
+        Args:
+            model_type (str): The type of items to fetch ('model' or 'LoRA').
         Returns:
-            A list of dictionaries containing model information.
+            A list of dictionaries containing item information.
         """
         url = f"{SWARM_URL}/API/ListModels"
-        api_cog = self.bot.get_cog("APICalls")  # Get a reference to the APICalls Cog
-        session_id = await api_cog.get_session()  # Use the get_session method from APICalls Cog
-        
+        api_cog = self.bot.get_cog("APICalls")
+        session_id = await api_cog.get_session()
+
         params = {
             "path": "",
-            "depth": 2,
+            "depth": 2 if model_type == "model" else 1,
             "session_id": session_id
         }
-        # Use the session from APICalls Cog
+        if model_type == "LoRA":
+            params["subtype"] = "LoRA"
+
         async with api_cog.session.post(url, json=params) as response:
             if response.status != 200:
-                raise Exception(f"Failed to get model list. HTTP Status Code: {response.status}, Response Content: {await response.text()}")
+                raise Exception(f"Failed to get {model_type} list. HTTP Status Code: {response.status}, Response Content: {await response.text()}")
             data = await response.json()
-            model_list = [
+            models_list = [
                 {
                     "title": file.get("title"),
                     "name": file.get("name"),
@@ -251,52 +255,21 @@ class APICalls(commands.Cog):
                 }
                 for file in data.get("files", [])
             ]
-            # Sort the model list by 'title'
-            model_list.sort(key=lambda x: int(x['title'].split()[0].replace('.', '')))
-            #titles = [model['title'] for model in model_list]
-            #print(titles)
-            print(f"Model list contains {len(model_list)} models")
-            
-            return model_list
+            # Additional logic for sorting models (not needed for LoRAs)
+            if model_type == "model":
+                models_list.sort(key=lambda x: int(x['title'].split()[0].replace('.', '')))
+
+            print(f"{model_type.title()} list contains {len(models_list)} {model_type}")
+
+            return models_list
         
-    async def get_lora_list(self) -> List[Dict[str, Any]]:
-        """Fetch the list of available LoRAs from the API.
-        Returns:
-            A list of dictionaries containing LoRA information.
-        """
-        url = f"{SWARM_URL}/API/ListModels"
-        api_cog = self.bot.get_cog("APICalls")
-        session_id = await api_cog.get_session()
-        
-        params = {
-            "path": "",
-            "depth": 1,
-            "subtype": "LoRA",
-            "session_id": session_id
-        }
-        async with api_cog.session.post(url, json=params) as response:
-            if response.status != 200:
-                raise Exception(f"Failed to get LoRA list. HTTP Status Code: {response.status}, Response Content: {await response.text()}")
-            data = await response.json()
-            lora_list = [
-                {
-                    "title": file.get("title"),
-                    "name": file.get("name"),
-                    # Add other fields as required
-                }
-                for file in data.get("files", [])
-            ]
-            print(f"LoRA list contains {len(lora_list)} LoRAs\n{[lora['title'] for lora in lora_list]}")
-            print(f"\n{lora_list}\n")
-            
-            return lora_list
     @commands.Cog.listener()
     async def on_message(self, message):
         """Handle the on_message event."""
         if message.author.bot:
             return
         if message.content.startswith("-test"):
-            await self.get_lora_list()
+            await self.get_models("LoRA")
         
     async def aiohttp_call_collect(self, interaction: discord.Interaction, payload: Dict) -> None:
         async with aiohttp.ClientSession() as session:
