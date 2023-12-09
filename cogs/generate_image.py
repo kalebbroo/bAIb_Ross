@@ -112,7 +112,7 @@ class GenerateImage(commands.Cog):
         if message.author.bot:
             return
         if message.content.startswith("-test"):
-            api = await self.bot.get_cog("APIPromptGenerator")
+            api = self.bot.get_cog("APIPromptGenerator")
             await api.determine_image_settings(message.content)
 
 
