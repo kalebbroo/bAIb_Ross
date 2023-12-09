@@ -140,7 +140,7 @@ class AIPromptGenerator(commands.Cog):
         combined_input = f"{pre_prompt}\nUser's request: {user_input}"
         
         # Making an API call to GPT-4 for models
-        response = await self.gpt_phone_home(combined_input, {json.dumps(models_list)})
+        response = await self.gpt_phone_home(combined_input, json.dumps(models_list))
         
         # Extracting the response content
         settings_text = response['choices'][0]['message']['content'].strip()
@@ -155,7 +155,7 @@ class AIPromptGenerator(commands.Cog):
             lora.pop('preview_image', None)
         
         # Making an API call to GPT-4 for LoRAs
-        response = await self.gpt_phone_home(combined_input, {json.dumps(loras_list)})
+        response = await self.gpt_phone_home(combined_input, json.dumps(loras_list))
         
         # Extracting the response content
         settings_text = response['choices'][0]['message']['content'].strip()
