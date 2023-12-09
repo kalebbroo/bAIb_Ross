@@ -263,14 +263,6 @@ class APICalls(commands.Cog):
 
             return models_list
         
-    @commands.Cog.listener()
-    async def on_message(self, message):
-        """Handle the on_message event."""
-        if message.author.bot:
-            return
-        if message.content.startswith("-test"):
-            await self.get_models("LoRA")
-        
     async def aiohttp_call_collect(self, interaction: discord.Interaction, payload: Dict) -> None:
         async with aiohttp.ClientSession() as session:
             try:

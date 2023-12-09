@@ -2,7 +2,8 @@ import discord
 from discord.ext import commands
 import openai
 import os
-from typing import Tuple, Optional, Any, Dict
+import json
+from typing import Tuple, Optional, Any, Dict, List
 
 # Get the GPT key from environment variables
 GPT_KEY = os.getenv('GPT_KEY')
@@ -118,6 +119,50 @@ class AIPromptGenerator(commands.Cog):
             prompt, negative = None, None
 
         return prompt, negative
+    
+    async def determine_image_settings(self, user_input: str) -> Dict[str, Any]:
+        """Determine the best settings for image generation based on user input and available models and LoRAs.
+        Args:
+            user_input (str): The user's input requesting a specific type of image.
+        Returns:
+            Dict[str, Any]: A dictionary containing the best settings for image generation.
+        """
+        # Fetching the models and LoRAs
+        api_call = self.bot.get_cog("APICalls")
+        models_list = await api_call.get_models('model')
+        loras_list = await api_call.get_models('LoRA')
+        models_info = models_list + loras_list
+
+        # Reading pre-defined instructions (pre_prompt)
+        pre_prompt = self.read_instructions('get_image_settings.txt')
+
+        # Combining pre-prompt, user input, and models information into a single string
+        combined_input = f"{pre_prompt}\nUser's request: {user_input}\n\nModels Information: {json.dumps(models_info)}"
+
+        # Making an API call to GPT-4
+        response = await self.gpt_phone_home(combined_input)
+
+        # Extracting the response content
+        settings_text = response['choices'][0]['message']['content'].strip()
+        print(f"Debug: settings_text = {settings_text}\n\n")
+
+        # Process the response to extract settings
+        settings = self.parse_gpt_response(settings_text)
+
+        return settings
+
+    def parse_gpt_response(self, response: str) -> Dict[str, Any]:
+        # Implement the logic to parse the GPT-4 response and extract the relevant settings
+        # Example:
+        settings = {
+            "model": "photorealism",
+            "lora": "cortana",
+            "aspect_ratio": "16:9",
+            "usage_hint": "use the trigger phrase cortana",
+            "trigger_phrase": "cortana"
+        }
+        # Actual implementation will depend on the format of GPT-4 response
+        return settings
 
 async def setup(bot: commands.Bot) -> None:
     """Setup function to add the Cog to the bot.

@@ -105,8 +105,15 @@ class GenerateImage(commands.Cog):
     async def generate_image(self, bot, interaction, payload):
         api_call = bot.get_cog("APICalls")
         await api_call.aiohttp_call_collect(interaction, payload)
-        
 
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        """Handle the on_message event."""
+        if message.author.bot:
+            return
+        if message.content.startswith("-test"):
+            api = await self.bot.get_cog("APIPromptGenerator")
+            await api.determine_image_settings(message.content)
 
 
 async def setup(bot):
