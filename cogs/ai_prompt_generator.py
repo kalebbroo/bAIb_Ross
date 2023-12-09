@@ -129,26 +129,41 @@ class AIPromptGenerator(commands.Cog):
         """
         # Fetching the models and LoRAs
         api_call = self.bot.get_cog("APICalls")
+        
+        # Fetching models and removing 'preview_image' from each model
         models_list = await api_call.get_models('model')
-        loras_list = await api_call.get_models('LoRA')
-        models_info = models_list + loras_list
-
-        # Reading pre-defined instructions (pre_prompt)
-        pre_prompt = self.read_instructions('get_image_settings.txt')
-
+        for model in models_list:
+            model.pop('preview_image', None)
+        
         # Combining pre-prompt, user input, and models information into a single string
+        pre_prompt = self.read_instructions('get_image_settings.txt')
         combined_input = f"{pre_prompt}\nUser's request: {user_input}"
-
-        # Making an API call to GPT-4
-        response = await self.gpt_phone_home(combined_input, {json.dumps(models_info)})
-
+        
+        # Making an API call to GPT-4 for models
+        response = await self.gpt_phone_home(combined_input, {json.dumps(models_list)})
+        
         # Extracting the response content
         settings_text = response['choices'][0]['message']['content'].strip()
         print(f"Debug: settings_text = {settings_text}\n\n")
-
+        
         # Process the response to extract settings
         settings = self.parse_gpt_response(settings_text)
-
+        
+        # Fetching LoRAs and removing 'preview_image' from each LoRA
+        loras_list = await api_call.get_models('LoRA')
+        for lora in loras_list:
+            lora.pop('preview_image', None)
+        
+        # Making an API call to GPT-4 for LoRAs
+        response = await self.gpt_phone_home(combined_input, {json.dumps(loras_list)})
+        
+        # Extracting the response content
+        settings_text = response['choices'][0]['message']['content'].strip()
+        print(f"Debug: settings_text = {settings_text}\n\n")
+        
+        # Process the response to extract settings
+        settings.update(self.parse_gpt_response(settings_text))
+        
         return settings
 
     def parse_gpt_response(self, response: str) -> Dict[str, Any]:
