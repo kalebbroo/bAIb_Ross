@@ -137,10 +137,10 @@ class AIPromptGenerator(commands.Cog):
         pre_prompt = self.read_instructions('get_image_settings.txt')
 
         # Combining pre-prompt, user input, and models information into a single string
-        combined_input = f"{pre_prompt}\nUser's request: {user_input}\n\nModels Information: {json.dumps(models_info)}"
+        combined_input = f"{pre_prompt}\nUser's request: {user_input}"
 
         # Making an API call to GPT-4
-        response = await self.gpt_phone_home(combined_input, "What are the best settings for generating this image?")
+        response = await self.gpt_phone_home(combined_input, {json.dumps(models_info)})
 
         # Extracting the response content
         settings_text = response['choices'][0]['message']['content'].strip()
