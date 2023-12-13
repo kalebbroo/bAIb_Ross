@@ -43,7 +43,7 @@ class APICalls(commands.Cog):
     @staticmethod
     def create_payload(session_id: str, prompt: Optional[str] = "Photorealistic, 4k, ultra high definition, portrait", 
                        negativeprompt: Optional[str] = "NSFW, low quality, blurry, low resolution, nipples, extra limbs",
-                    images: int = 4, donotsave: bool = True, model: str = "turbovisionxlSuperFastXLBasedOnNew_tvxlV20Bakedvae.safetensors", 
+                    images: int = 4, donotsave: bool = True, model: str = "turbovisionxl.safetensors", 
                     width: int = 1024, height: int = 1024, cfgscale: int = 2.5, upscale: Optional[bool] = False,
                     steps: int = 6, seed: int = -1, enableaitemplate: Optional[Any] = None, 
                     init_image: Optional[str] = None, init_image_creativity: Optional[float] = None,
