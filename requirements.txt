@@ -3,3 +3,4 @@ pillow
 requests
 python-dotenv
 openai
+websockets

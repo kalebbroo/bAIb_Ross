@@ -296,11 +296,6 @@ class Buttons(commands.Cog):
                 
                 #Delete the original message
                 await interaction.message.delete()
-                
-                # Send a placeholder follow-up message
-                placeholder_embed = discord.Embed(description="Generating image, one moment please...", color=discord.Color.blue())
-                placeholder_embed.set_footer(text=f"Requested by {interaction.user.display_name}", icon_url=interaction.user.avatar.url)
-                await interaction.followup.send(embed=placeholder_embed, wait=True)
 
                 # Call the API to generate the image
                 api_call = self.bot.get_cog("APICalls")

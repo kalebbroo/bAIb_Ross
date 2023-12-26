@@ -153,7 +153,7 @@ class Commands(commands.Cog):
                     return
 
                 response = await ai.gpt_phone_home(pre_prompt, content)
-                print(f"Response: {response}") # Debug
+                #print(f"Response: {response}") # Debug
                 generate_type = "text"  # Default value for generate_type
                 if 'choices' in response and response['choices'] and 'message' in response['choices'][0] and 'content' in response['choices'][0]['message']:
                     content = response['choices'][0]['message']['content']
@@ -217,15 +217,15 @@ class Commands(commands.Cog):
                                 await message.channel.send("An error occurred while processing the image.")
                                 
                     case "txt2video":
-                        # Handle video generation
+                        # Handle text2img2video generation
                         content = response['choices'][0]['message']['content']
                         prompt, negative = ai.split_prompt(content, prompt_label="Prompt:", negative_label="Negative:")
                         session_id = await api_call.get_session()
                         payload = api_call.create_payload(session_id, prompt=prompt, negativeprompt=negative, 
-                                                        video_format="gif", video_frames=15, video_fps=6, upscale=True,
-                                                        video_model="OfficialStableDiffusion/svd_xt.safetensors", video_steps=10, 
+                                                        video_format="gif", video_frames=25, video_fps=60, upscale=True,
+                                                        video_model="OfficialStableDiffusion/svd_xt.safetensors", video_steps=20, 
                                                         video_cfg=2.5, video_min_cfg=1, video_motion_bucket="127",
-                                                        width=1344, height=768, images=1
+                                                        width=1344, height=768, images=1, batchsize=1
                                                         )
                         buttons = self.bot.get_cog("Buttons")
                         embed = discord.Embed(
@@ -245,9 +245,9 @@ class Commands(commands.Cog):
                                 session_id = await api_call.get_session()
                                 payload = api_call.create_payload(session_id, init_image=encoded_image, upscale=True,
                                                                 prompt=prompt, negativeprompt=negative, 
-                                                                video_format="gif", video_frames=25, video_fps=6, 
-                                                                video_model="OfficialStableDiffusion/svd_xt.safetensors", video_steps=15, 
-                                                                video_cfg=2.5, video_min_cfg=1, video_motion_bucket="127"
+                                                                video_format="gif", video_frames=25, video_fps=60, 
+                                                                video_model="OfficialStableDiffusion/svd_xt.safetensors", video_steps=20, 
+                                                                video_cfg=2.5, video_min_cfg=1, video_motion_bucket="127", batchsize=1
                                                                 )
                                 buttons = self.bot.get_cog("Buttons")
                                 embed = discord.Embed(
@@ -295,7 +295,7 @@ class Commands(commands.Cog):
                                 payload = api_call.create_payload(
                                     session_id, init_image=encoded_image, init_image_creativity=0.3,
                                     width=width * 2, height=height * 2, 
-                                    upscale=True, images=1, steps=60, cfgscale=10
+                                    upscale=True, images=1, steps=60, cfgscale=10, batchsize=1
                                 )
 
                                 buttons = self.bot.get_cog("Buttons")

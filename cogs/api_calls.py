@@ -43,9 +43,9 @@ class APICalls(commands.Cog):
     @staticmethod
     def create_payload(session_id: str, prompt: Optional[str] = "Photorealistic, 4k, ultra high definition, portrait", 
                        negativeprompt: Optional[str] = "NSFW, low quality, blurry, low resolution, nipples, extra limbs",
-                    images: int = 4, donotsave: bool = True, model: str = "turbovisionxl.safetensors", 
-                    width: int = 1024, height: int = 1024, cfgscale: int = 2.5, upscale: Optional[bool] = False,
-                    steps: int = 6, seed: int = -1, enableaitemplate: Optional[Any] = None, 
+                    images: int = 1, batchsize: Optional[int] = 4, donotsave: bool = True, model: str = "colossusProjectXLSFW_v53Trained.safetensors", 
+                    width: int = 1344, height: int = 768, cfgscale: int = 9, upscale: Optional[bool] = False,
+                    steps: int = 20, seed: int = -1, enableaitemplate: Optional[Any] = None, 
                     init_image: Optional[str] = None, init_image_creativity: Optional[float] = None,
                     lora: Optional[str] = None, embedding: Optional[str] = None, 
                     video_format: Optional[str] = None, video_frames: Optional[int] = None, 
@@ -89,6 +89,7 @@ class APICalls(commands.Cog):
         base_payload = {
                 "session_id": session_id,
                 "images": images,
+                "batchsize": batchsize,
                 "donotsave": donotsave,
                 "seed": seed,
                 "prompt": prompt,
@@ -126,30 +127,44 @@ class APICalls(commands.Cog):
             payload: The payload for the API call.
         """
         upscale = payload.get('upscale', False)
+        # Send a placeholder follow-up message
+        placeholder_embed = discord.Embed(description="Generating image, one moment please...", color=discord.Color.blue())
+        placeholder_embed.set_footer(text=f"Requested by {interaction.user.display_name}", icon_url=interaction.user.avatar.url)
+        placeholder = await interaction.followup.send(embed=placeholder_embed, wait=True)
+
         if upscale:
             await APICalls.aiohttp_call_collect(self, interaction, payload)
             return
-        #print(f"Payload: {payload}")  # Debugging line
+
         uri = f"ws://{self.address[7:]}/API/GenerateText2ImageWS"  # WebSocket URI for the API
         image_grid_cog = self.bot.get_cog("ImageGrid")  # Get the ImageGrid Cog
 
-        # Handling WebSocket connection and image generation
         try:
             async with websockets.connect(uri, ping_interval=18000, ping_timeout=18100, max_size=2**30) as ws:
                 await ws.send(json.dumps(payload))
-                print(ws.max_size)
-                #print("Sent payload to WebSocket")
-                
+                #print(ws.max_size)
+
+                model_name = payload.get('model', 'Unknown')
+                width = payload.get('width', 'Unknown')
+                height = payload.get('height', 'Unknown')
+                seed = payload.get('seed', 'Unknown')
+                images = payload.get('images', 'Unknown')
+                steps = payload.get('steps', 'Unknown')
+                cfgscale = payload.get('cfgscale', 'Unknown')
                 prompt = payload.get("prompt", "No prompt")
                 negative = payload.get("negativeprompt", "No negative prompt")
-                message = await interaction.followup.send(content=f'Generating images for {interaction.user.mention} using\n**Prompt:** `{prompt}` \n**Negative:** `{negative}`')
-                message_id = message.id 
-                print(f"Message ID call_collect: {message_id}")
+                new_embed = discord.Embed(title=f'Generating images for {interaction.user.display_name}', 
+                                          description=f'using `{model_name}`\n**Prompt:** `{prompt}` \n**Negative:** `{negative}`', 
+                                          color=discord.Color.blue())
+                footer_txt = f"Width: {width} | Height: {height} | Seed: {seed} | Steps: {steps} | CFG Scale: {cfgscale}"
+                new_embed.set_footer(text=footer_txt, icon_url=interaction.user.avatar.url)
+                new_embed.set_author(name=interaction.client.user.display_name, icon_url=interaction.client.user.avatar.url)
+    
+                message = await placeholder.edit(embed=new_embed)
                 
                 while True:
                     try:
                         response_data = await ws.recv()
-                        #print(f"Received data: {response_data}")
                         data = json.loads(response_data)
                         
                         gen_progress = data.get('gen_progress', {})
@@ -157,45 +172,20 @@ class APICalls(commands.Cog):
                         image_data = data.get('image', None)
                         error_data = data.get('error', None)
 
-                        # Handle different types of data received from the WebSocket
-                        if preview_data:
-                            #print("Processing preview data...")
-                            # Process preview image data
-                            base64_str = preview_data.split('data:image/jpeg;base64,')[-1]
-                            image_data = base64.b64decode(base64_str)
-                            image = Image.open(BytesIO(image_data))
+                        if preview_data or image_data:
+                            base64_str = (preview_data or image_data).split('data:image/jpeg;base64,')[-1]
+                            image = Image.open(BytesIO(base64.b64decode(base64_str)))
+                            is_preview = bool(preview_data)
 
-                            embed, file = await image_grid_cog.image_grid(image, interaction, is_preview=True, payload=payload, message_id=message_id)
-                            await message.edit(content=f'Generating images for {interaction.user.mention} using\n**Prompt:** `{prompt}` \n**Negative:** `{negative}`',
-                                                embed=embed, attachments=[file])
-                            image_grid_cog = self.bot.get_cog("ImageGrid")
+                            print(f"Processing {'preview' if is_preview else 'final'} image")
+
+                            await image_grid_cog.process_image(interaction, image, is_preview, message)
+
                         elif error_data:
-                            print(f"Received error data: {error_data}")
-                            # Log error and send error message
                             error_msg = f"Failed to generate image. Error: {error_data}"
                             logging.error(error_msg)
                             await interaction.followup.send(content=error_msg)
                             break
-
-                        elif image_data:
-                            print("Processing image data...")
-                            # Process final image data
-                            base64_str = image_data.split('data:image/jpeg;base64,')[-1]
-                            image = Image.open(BytesIO(base64.b64decode(base64_str)))
-
-                            embed, file = await image_grid_cog.image_grid(image, interaction, is_preview=False, payload=payload, message_id=message_id)
-
-                            # Check if it's the last image in the last grid
-                            if image_grid_cog.current_quadrant == 4:  
-                                buttons_view = self.bot.get_cog('Buttons').ImageButtons(self.bot, interaction, payload, message_id=message_id)
-                                await message.edit(content=f'Generating images for {interaction.user.mention} using\n**Prompt:** `{prompt}` \n**Negative:** `{negative}`',
-                                                    embed=embed, attachments=[file], view=buttons_view)
-                            else:
-                                await message.edit(content=f'Generating images for {interaction.user.mention} using\n**Prompt:** `{prompt}` \n**Negative:** `{negative}`',
-                                                    embed=embed, attachments=[file])
-                            # Store information in the dictionary
-                            if message_id not in self.message_data:
-                                self.message_data[message_id] = {'payload': payload, 'user_id': interaction.user.id, 'image_files': []}
 
                     except websockets.exceptions.ConnectionClosedOK:
                         print("Connection closed OK")
@@ -206,9 +196,8 @@ class APICalls(commands.Cog):
                         print(f"An exception occurred: {e}\nFull Traceback: {full_traceback}")
                         break
 
-        except (ConnectionClosedOK, ConnectionClosedError):
+        except (websockets.exceptions.ConnectionClosedOK, websockets.exceptions.ConnectionClosedError):
             print("Connection closed unexpectedly. Reconnecting...")
-            # Handle connection issues
             logging.warning("WebSocket connection closed. Attempting to reconnect...")
             new_session_id = await self.get_session()
             payload["session_id"] = new_session_id

@@ -2,8 +2,6 @@ from discord.ext import commands
 from discord import app_commands, Embed, Colour
 import base64
 from aiohttp import ClientSession
-import websockets
-import json
 import base64
 from PIL import Image
 from io import BytesIO
