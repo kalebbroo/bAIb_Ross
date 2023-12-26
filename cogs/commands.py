@@ -6,6 +6,7 @@ from typing import List, Dict, Any
 import base64
 from PIL import Image
 import io
+import json
 
 
 class Commands(commands.Cog):
@@ -197,16 +198,24 @@ class Commands(commands.Cog):
                                 # Convert the image to base64
                                 encoded_image = base64.b64encode(buffer.getvalue()).decode('utf-8')
 
+                                # Debug: Print the base64 image string length
+                                # print(f"Encoded Image Length: {len(encoded_image)}")
+
+                                # TODO: Wait for API to support batchsize > 1, then remove upscale=True and batchsize=1
                                 session_id = await api_call.get_session()
                                 payload = api_call.create_payload(
                                     session_id, init_image=encoded_image, 
-                                    init_image_creativity=0.3,
-                                    width=width, height=height
+                                    init_image_creativity=0.6, batchsize=1,
+                                    width=width, height=height, upscale=True,
                                 )
+                                # Write payload to a file for debugging
+                                # with open('debug_payload.txt', 'w', encoding='utf-8') as file:
+                                #     file.write(json.dumps(payload, indent=4))
+
                                 buttons = self.bot.get_cog("Buttons")
                                 embed = discord.Embed(
                                     title="Image to Image Generation",
-                                    description="Create an image based on the uploaded image. Continue?",
+                                    description=f"Create an image based on the uploaded image. Continue?\n\nClick **EDIT** to change Prompt.",
                                     color=discord.Color.green()
                                 )
                                 embed.set_footer(text=f"Requested by {message.author.display_name}", icon_url=message.author.avatar.url)
