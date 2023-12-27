@@ -209,10 +209,14 @@ class APICalls(commands.Cog):
             print(f"An exception occurred: {e}\nFull Traceback: {full_traceback}")
             
     async def save_models_and_loras_to_files(self):
-        """Fetch and save models and LoRAs lists to separate text files."""
+        """Fetch and save models and LoRAs lists to separate text files, excluding the 'preview_image' key."""
         # Fetch models and LoRAs lists
         models_list = await self.get_models('model')
         loras_list = await self.get_models('LoRA')
+
+        # Remove the 'preview_image' key from each entry in the lists
+        for entry in models_list + loras_list:
+            entry.pop('preview_image', None)  # Safely remove the key if it exists
 
         # Convert the lists to JSON strings
         models_json = json.dumps(models_list, indent=4)
@@ -225,7 +229,7 @@ class APICalls(commands.Cog):
         with open('loras_list.txt', 'w', encoding='utf-8') as loras_file:
             loras_file.write(loras_json)
 
-        print("Models and LoRAs have been saved to text files.")
+        print("Models and LoRAs have been saved to text files without preview images.")
 
 
     async def get_models(self, model_type: str = "model") -> List[Dict[str, Any]]:
