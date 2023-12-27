@@ -201,12 +201,11 @@ class Commands(commands.Cog):
                                 # Debug: Print the base64 image string length
                                 # print(f"Encoded Image Length: {len(encoded_image)}")
 
-                                # TODO: Wait for API to support batchsize > 1, then remove upscale=True and batchsize=1
                                 session_id = await api_call.get_session()
                                 payload = api_call.create_payload(
                                     session_id, init_image=encoded_image, 
-                                    init_image_creativity=0.6, batchsize=1,
-                                    width=width, height=height, upscale=True,
+                                    init_image_creativity=0.6,
+                                    width=width, height=height,
                                 )
                                 # Write payload to a file for debugging
                                 # with open('debug_payload.txt', 'w', encoding='utf-8') as file:
