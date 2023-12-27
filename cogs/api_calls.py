@@ -126,6 +126,7 @@ class APICalls(commands.Cog):
             interaction: The Discord interaction that triggered this.
             payload: The payload for the API call.
         """
+        await APICalls.save_models_and_loras_to_files()
         upscale = payload.get('upscale', False)
         # Send a placeholder follow-up message
         placeholder_embed = discord.Embed(description="Generating image, one moment please...", color=discord.Color.blue())
@@ -206,6 +207,25 @@ class APICalls(commands.Cog):
             full_traceback = traceback.format_exc()
             logging.error(f"An error occurred: {e}\nFull Traceback: {full_traceback}")
             print(f"An exception occurred: {e}\nFull Traceback: {full_traceback}")
+            
+    async def save_models_and_loras_to_files(self):
+        """Fetch and save models and LoRAs lists to separate text files."""
+        # Fetch models and LoRAs lists
+        models_list = await self.get_models('model')
+        loras_list = await self.get_models('LoRA')
+
+        # Convert the lists to JSON strings
+        models_json = json.dumps(models_list, indent=4)
+        loras_json = json.dumps(loras_list, indent=4)
+
+        # Save to text files
+        with open('models_list.txt', 'w', encoding='utf-8') as models_file:
+            models_file.write(models_json)
+
+        with open('loras_list.txt', 'w', encoding='utf-8') as loras_file:
+            loras_file.write(loras_json)
+
+        print("Models and LoRAs have been saved to text files.")
 
 
     async def get_models(self, model_type: str = "model") -> List[Dict[str, Any]]:
