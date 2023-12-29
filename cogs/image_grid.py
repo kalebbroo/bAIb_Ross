@@ -3,6 +3,7 @@ from discord.ext import commands
 from datetime import datetime
 from io import BytesIO
 from PIL import Image
+import base64
 import discord
 import time
 import os
@@ -16,6 +17,32 @@ class ImageGrid(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.sessions = {}
+        
+    async def upscale(self, message):
+        try:
+            # Convert the image to base64
+            encoded_image = base64.b64encode(buffer.getvalue()).decode('utf-8')
+
+            session_id = await api_call.get_session()
+            payload = api_call.create_payload(
+                session_id, init_image=encoded_image, init_image_creativity=0.3,
+                width=width * 2, height=height * 2, 
+                upscale=True, images=1, steps=60, cfgscale=10, batchsize=1
+            )
+
+            buttons = self.bot.get_cog("Buttons")
+            embed = discord.Embed(
+                title="Image Upscaling",
+                description=f"""Ready to upscale the uploaded image? maximum allowed dimensions (2048x2048).
+                Dont like it? Buy me a RTX 4090 then....\nDo you want to continue?""",
+                color=discord.Color.orange()
+            )
+            embed.set_footer(text=f"Requested by {message.author.display_name}", icon_url=message.author.avatar.url)
+            view = buttons.ConfirmationView(self.bot, payload, message.author.id)
+            await message.channel.send(embed=embed, view=view)
+        except Exception as e:
+            print(f"Error while processing the image: {e}")
+            await message.channel.send("An error occurred while processing the image.")
 
     def get_session_state(self, interaction_id):
         """Get the session state for a specific interaction."""

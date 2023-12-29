@@ -111,9 +111,8 @@ class Buttons(commands.Cog):
 
     # Select Menu for choosing an image to upscale
     class UpscaleSelect(Select):
-        def __init__(self, bot, image_files, payload):
+        def __init__(self, bot, image_files):
             self.bot = bot
-            self.payload = payload
             options = []
             for i, image_file in enumerate(image_files):
                 # Create a SelectOption for each image file
@@ -131,22 +130,6 @@ class Buttons(commands.Cog):
                 image_data = f.read()
                 image = base64.b64encode(image_data).decode('utf-8')
 
-            # Create or update the payload
-            payload = {
-                "upscale": "true",
-                "initimage": image,
-                "init_image_creativity": 0,
-                "model": "juggernautXL_version6Rundiffusion.safetensors",
-                "width": self.payload.get('width') * 2,
-                "height": self.payload.get('height') * 2,
-                "images": 1,
-                "steps": 60,
-            }
-            self.payload.update(payload)
-            #print(f"Payload from upscale: {self.payload}")
-
-            # Call the API method to upscale the image
-            await self.bot.get_cog('APICalls').call_collect(interaction, self.payload)
 
     class ImageSelect(Select):
         def __init__(self, bot, image_files, payload):
