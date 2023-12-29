@@ -94,18 +94,20 @@ class ImageGrid(commands.Cog):
                 state["preview_images"].clear()
 
         else:
-            # Handle final images
             state["final_images"].append(file)
             if len(state["final_images"]) == state["num_images_expected"]:
                 # Save final images
                 self.save_final_images(interaction, state["final_images"])
 
-                # Edit or send a new message with final images
+                # Prepare buttons for the final image embed
+                buttons_view = self.bot.get_cog("Buttons").ImageButtons(self.bot, interaction, state['payload'], message.id)
+
+                # Edit or send a new message with final images and buttons
                 current_embed = message.embeds[0] if message.embeds else discord.Embed()
                 if state["message"]:
-                    state["message"] = await state["message"].edit(embed=current_embed, attachments=state["final_images"])
+                    state["message"] = await state["message"].edit(embed=current_embed, attachments=state["final_images"], view=buttons_view)
                 else:
-                    state["message"] = await interaction.followup.send(embed=current_embed, files=state["final_images"])
+                    state["message"] = await interaction.followup.send(embed=current_embed, files=state["final_images"], view=buttons_view)
                 state["final_images"].clear()  # Clear final images list
 
     def save_final_images(self, interaction, image_files):
