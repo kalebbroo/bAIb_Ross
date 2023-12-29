@@ -94,17 +94,40 @@ class ImageGrid(commands.Cog):
                 state["preview_images"].clear()
 
         else:
+            # Handle final images
             state["final_images"].append(file)
             if len(state["final_images"]) == state["num_images_expected"]:
-                # Handle final images
+                # Save final images
+                self.save_final_images(interaction, state["final_images"])
+
+                # Edit or send a new message with final images
                 current_embed = message.embeds[0] if message.embeds else discord.Embed()
                 if state["message"]:
-                    # Edit the existing message with the final images
                     state["message"] = await state["message"].edit(embed=current_embed, attachments=state["final_images"])
                 else:
-                    # If there's no previous message, send a new one
                     state["message"] = await interaction.followup.send(embed=current_embed, files=state["final_images"])
                 state["final_images"].clear()  # Clear final images list
+
+    def save_final_images(self, interaction, image_files):
+        """Save final images to disk."""
+        username = interaction.user.name
+        message_id = interaction.message.id
+        date_str = datetime.now().strftime("%Y-%m-%d")
+        time_str = datetime.now().strftime("%H-%M-%S")
+        folder_name = f"images/{username}/{date_str}/{message_id}"
+
+        os.makedirs(folder_name, exist_ok=True)
+
+        for idx, file in enumerate(image_files):
+            # You might want to include idx in the filename to differentiate between images
+            image_path = os.path.join(folder_name, f"final-image-{idx+1}-{time_str}.png")
+            file.fp.seek(0)  # Reset file pointer
+            with open(image_path, "wb") as img_file:
+                img_file.write(file.fp.read())
+            file.fp.seek(0) # Reset file pointer 
+
+        print(f"Saved final images for {username} on {date_str}")
+
 
 # class ImageGrid(commands.Cog):
 #     """A class for generating the image grid."""

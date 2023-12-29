@@ -250,13 +250,17 @@ class Commands(commands.Cog):
                             try:
                                 # Convert the attachment directly to base64
                                 encoded_image = await Commands.image_to_base64(message.attachments[0])
+
                                 session_id = await api_call.get_session()
-                                payload = api_call.create_payload(session_id, init_image=encoded_image, upscale=True,
-                                                                prompt=prompt, negativeprompt=negative, 
-                                                                video_format="gif", video_frames=25, video_fps=60, 
-                                                                video_model="OfficialStableDiffusion/svd_xt.safetensors", video_steps=20, 
-                                                                video_cfg=2.5, video_min_cfg=1, video_motion_bucket="127", batchsize=1
-                                                                )
+                                prompt = "perfectly looped video"
+                                negative = "NSFW"
+                                payload = api_call.create_payload(session_id, prompt=prompt, negativeprompt=negative, 
+                                                        init_image=encoded_image, init_image_creativity=0,
+                                                        video_format="gif", video_frames=25, video_fps=60, upscale=True,
+                                                        video_model="OfficialStableDiffusion/svd_xt.safetensors", video_steps=20, 
+                                                        video_cfg=2.5, video_min_cfg=1, video_motion_bucket="127",
+                                                        width=1344, height=768, images=1, batchsize=1
+                                                        )
                                 buttons = self.bot.get_cog("Buttons")
                                 embed = discord.Embed(
                                     title="Image to Video Generation",

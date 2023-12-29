@@ -126,7 +126,7 @@ class APICalls(commands.Cog):
             interaction: The Discord interaction that triggered this.
             payload: The payload for the API call.
         """
-        await APICalls.save_models_and_loras_to_files(self)
+        #await APICalls.save_models_and_loras_to_files(self)
         upscale = payload.get('upscale', False)
         # Send a placeholder follow-up message
         placeholder_embed = discord.Embed(description="Generating image, one moment please...", color=discord.Color.blue())
