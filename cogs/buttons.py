@@ -74,7 +74,15 @@ class Buttons(commands.Cog):
         @discord.ui.button(style=ButtonStyle.secondary, label="Add to Showcase", custom_id="showcase", row=1)
         async def showcase(self, interaction, button):
             await interaction.response.defer()
-            await interaction.followup.send("This button is not setup yet.", ephemeral=True)
+            attachments = interaction.message.attachments
+            if not attachments:
+                await interaction.followup.send("No images found to showcase.", ephemeral=True)
+                return
+
+            select_menu = Buttons.ShowcaseSelect(self.bot, attachments, interaction.message)
+            view = discord.ui.View()
+            view.add_item(select_menu)
+            await interaction.followup.send("Select an image to showcase.", view=view)
 
         @discord.ui.button(style=ButtonStyle.secondary, label="Generate From Source Image", custom_id="choose_img", row=2)
         async def choose_img(self, interaction, button):
@@ -89,7 +97,7 @@ class Buttons(commands.Cog):
             view.add_item(select_menu)
             await interaction.channel.send("Select an image to generate more from.", view=view)
 
-    """Selecet Menus for choosing an img2img or upscale"""
+    """Selecet Menus for choosing an img2img, upscale, and showcase"""
 
     # Select Menu for choosing an image to upscale
     class UpscaleSelect(discord.ui.Select):
@@ -149,6 +157,30 @@ class Buttons(commands.Cog):
 
             # Call the img2img method with the encoded image and the user who initiated the interaction
             await self.bot.get_cog('ImageGrid').img2img(interaction.message, encoded_image, interaction.user)
+
+    class ShowcaseSelect(discord.ui.Select):
+        def __init__(self, bot, attachments, message):
+            self.bot = bot
+            self.message = message
+            self.attachments = attachments
+
+            options = [discord.SelectOption(label=f"Image {i+1}", value=str(i)) for i in range(len(attachments))]
+            super().__init__(placeholder='Choose an image to showcase', options=options)
+
+        async def callback(self, interaction):
+            await interaction.response.defer()
+            selected_attachment = self.attachments[int(self.values[0])]
+
+            if 'image' not in selected_attachment.content_type:
+                await interaction.followup.send("Selected file is not an image.", ephemeral=True)
+                return
+
+            # Send the selected image to the showcase channel
+            showcase_cog = self.bot.get_cog('Showcase')
+            if showcase_cog:
+                await showcase_cog.showcase_image(interaction.guild, selected_attachment.url, interaction.user)
+            else:
+                await interaction.followup.send("Showcase feature is currently unavailable.", ephemeral=True)
 
 
     """Buttons for Choosing a model"""
