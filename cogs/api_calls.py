@@ -180,7 +180,7 @@ class APICalls(commands.Cog):
 
                             print(f"Processing {'preview' if is_preview else 'final'} image")
 
-                            await image_grid_cog.process_image(interaction, image, is_preview, message)
+                            await image_grid_cog.process_image(interaction, image, is_preview, message, payload)
 
                         elif error_data:
                             error_msg = f"Failed to generate image. Error: {error_data}"

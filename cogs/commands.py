@@ -191,35 +191,12 @@ class Commands(commands.Cog):
                                 await attachment.save(buffer)
                                 buffer.seek(0)
 
-                                # Read the image to get its size
-                                with Image.open(buffer) as img:
-                                    width, height = img.size
-
                                 # Convert the image to base64
                                 encoded_image = base64.b64encode(buffer.getvalue()).decode('utf-8')
 
-                                # Debug: Print the base64 image string length
-                                # print(f"Encoded Image Length: {len(encoded_image)}")
+                                # Call the img2img method with the encoded image and user
+                                await self.bot.get_cog('ImageGrid').img2img(message, encoded_image, message.author)
 
-                                session_id = await api_call.get_session()
-                                payload = api_call.create_payload(
-                                    session_id, init_image=encoded_image, 
-                                    init_image_creativity=0.6,
-                                    width=width, height=height,
-                                )
-                                # Write payload to a file for debugging
-                                # with open('debug_payload.txt', 'w', encoding='utf-8') as file:
-                                #     file.write(json.dumps(payload, indent=4))
-
-                                buttons = self.bot.get_cog("Buttons")
-                                embed = discord.Embed(
-                                    title="Image to Image Generation",
-                                    description=f"Create an image based on the uploaded image. Continue?\n\nClick **EDIT** to change Prompt.",
-                                    color=discord.Color.green()
-                                )
-                                embed.set_footer(text=f"Requested by {message.author.display_name}", icon_url=message.author.avatar.url)
-                                view = buttons.ConfirmationView(self.bot, payload, message.author.id)
-                                await message.channel.send(embed=embed, view=view)
                             except Exception as e:
                                 print(f"Error while processing the image: {e}")
                                 await message.channel.send("An error occurred while processing the image.")
@@ -279,47 +256,17 @@ class Commands(commands.Cog):
                     case "upscale":
                         if message.attachments:
                             try:
+                                # Get the first attachment and convert it to base64
                                 attachment = message.attachments[0]
                                 buffer = io.BytesIO()
                                 await attachment.save(buffer)
                                 buffer.seek(0)
 
-                                # Read the image to get its size
-                                with Image.open(buffer) as img:
-                                    width, height = img.size
-
-                                # Check if the image exceeds the maximum allowed dimension
-                                max_dimension = 2048
-                                if width > max_dimension or height > max_dimension:
-                                    embed = discord.Embed(
-                                        title="Upscale Cancelled",
-                                        description="The image size exceeds the maximum allowed dimensions (2048x2048) for upscaling.",
-                                        color=discord.Color.red()
-                                    )
-                                    embed.set_footer(text=f"Requested by {message.author.display_name}", icon_url=message.author.avatar.url)
-                                    await message.channel.send(embed=embed)
-                                    return
-
                                 # Convert the image to base64
                                 encoded_image = base64.b64encode(buffer.getvalue()).decode('utf-8')
 
-                                session_id = await api_call.get_session()
-                                payload = api_call.create_payload(
-                                    session_id, init_image=encoded_image, init_image_creativity=0.3,
-                                    width=width * 2, height=height * 2, 
-                                    upscale=True, images=1, steps=60, cfgscale=10, batchsize=1
-                                )
+                                await self.bot.get_cog('ImageGrid').upscale(message, encoded_image, user=message.author)
 
-                                buttons = self.bot.get_cog("Buttons")
-                                embed = discord.Embed(
-                                    title="Image Upscaling",
-                                    description=f"""Ready to upscale the uploaded image? maximum allowed dimensions (2048x2048).
-                                    Dont like it? Buy me a RTX 4090 then....\nDo you want to continue?""",
-                                    color=discord.Color.orange()
-                                )
-                                embed.set_footer(text=f"Requested by {message.author.display_name}", icon_url=message.author.avatar.url)
-                                view = buttons.ConfirmationView(self.bot, payload, message.author.id)
-                                await message.channel.send(embed=embed, view=view)
                             except Exception as e:
                                 print(f"Error while processing the image: {e}")
                                 await message.channel.send("An error occurred while processing the image.")

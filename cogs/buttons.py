@@ -45,31 +45,25 @@ class Buttons(commands.Cog):
             await self.bot.get_cog('APICalls').call_collect(interaction, self.payload)
 
         @discord.ui.button(style=ButtonStyle.primary, label="Upscale", custom_id="upscale", row=1)
-        async def upscale(self, interaction, button):
+        async def upscale_button(self, interaction, button):
             await interaction.response.defer()
             try:
-                message_info = self.bot.get_cog('APICalls').message_data.get(self.message_id)  # Retrieve the stored info
-                print(f"message_info: {message_info}")
-
-                # Initialize image_files as an empty list
-                image_files = []
-
-                if message_info:
-                    payload = message_info.get('payload')
-                    user_id = message_info.get('user_id')
-                    image_files = message_info.get('image_files', [])
-
-                if not image_files:
+                # Extract attachments from the message
+                attachments = interaction.message.attachments
+                if not attachments:
                     await interaction.followup.send("No images found to upscale.", ephemeral=True)
                     return
 
-                select_menu = Buttons.UpscaleSelect(self.bot, image_files, self.payload)
+                # Pass the message directly to the UpscaleSelect menu
+                select_menu = Buttons.UpscaleSelect(self.bot, attachments, interaction.message)
                 view = discord.ui.View()
                 view.add_item(select_menu)
-                await interaction.channel.send("Select an image to upscale", view=view)
+                await interaction.followup.send("Select an image to upscale", view=view)
 
             except Exception as e:
                 print(f"An exception occurred in the upscale button: {e}")
+                await interaction.followup.send("An error occurred while processing the request.")
+
 
         @discord.ui.button(style=ButtonStyle.danger, label="Delete", custom_id="delete", row=1)
         async def delete(self, interaction, button):
@@ -77,90 +71,85 @@ class Buttons(commands.Cog):
             await interaction.response.send_message("Your shame has been deleted", ephemeral=True)
             await interaction.message.delete()
 
+        @discord.ui.button(style=ButtonStyle.secondary, label="Add to Showcase", custom_id="showcase", row=1)
+        async def showcase(self, interaction, button):
+            await interaction.response.defer()
+            await interaction.followup.send("This button is not setup yet.", ephemeral=True)
+
         @discord.ui.button(style=ButtonStyle.secondary, label="Generate From Source Image", custom_id="choose_img", row=2)
         async def choose_img(self, interaction, button):
             await interaction.response.defer()
-            try:
-                message_data = self.bot.get_cog('APICalls').message_data.get(self.message_id)  # Retrieve the stored info
+            attachments = interaction.message.attachments
+            if not attachments:
+                await interaction.followup.send("No images found to use.", ephemeral=True)
+                return
 
-                print(f"Message ID in buttons: {self.message_id}")
-                print(f"Message Data in buttons: {self.bot.get_cog('APICalls').message_data}")
-
-                # Initialize image_files as an empty list
-                #image_files = []
-
-                if message_data:
-                    payload = message_data.get('payload')
-                    user_id = message_data.get('user_id')
-                    image_files = message_data.get('image_files', [])
-                    print(f"\nImage files from button press: {image_files}\n")
-
-                if not image_files:
-                    await interaction.followup.send("No images found to upscale.", ephemeral=True)
-                    return
-                            
-                select_menu = Buttons.ImageSelect(self.bot, image_files, self.payload)
-                view = discord.ui.View()
-                view.add_item(select_menu)
-                await interaction.channel.send("Select an image to generate more from.", view=view)
-            except Exception as e:
-                print(f"An exception occurred in the choose_img button: {e}")
-
+            select_menu = Buttons.ImageSelect(self.bot, attachments)
+            view = discord.ui.View()
+            view.add_item(select_menu)
+            await interaction.channel.send("Select an image to generate more from.", view=view)
 
     """Selecet Menus for choosing an img2img or upscale"""
 
     # Select Menu for choosing an image to upscale
-    class UpscaleSelect(Select):
-        def __init__(self, bot, image_files):
+    class UpscaleSelect(discord.ui.Select):
+        def __init__(self, bot, attachments, message):
             self.bot = bot
-            options = []
-            for i, image_file in enumerate(image_files):
-                # Create a SelectOption for each image file
-                option = discord.SelectOption(label=f"Image {i+1}", value=image_file)
-                options.append(option)
+            self.message = message
+            self.attachments = attachments
+
+            # Ensure there are attachments and they are images
+            image_attachments = [att for att in attachments if 'image' in att.content_type]
+            if not image_attachments:
+                raise ValueError("No image attachments found.")
+
+            options = [discord.SelectOption(label=f"Image {i+1}", value=str(i)) for i in range(len(image_attachments))]
             super().__init__(placeholder='Choose an image to use as a reference', options=options)
 
         async def callback(self, interaction):
             await interaction.response.defer()
-            # Get the selected image file
-            image_path = self.values[0]
+            try:
+                selected_attachment = self.attachments[int(self.values[0])]
 
-            # Convert the image to Base64
-            with open(image_path, "rb") as f:
-                image_data = f.read()
-                image = base64.b64encode(image_data).decode('utf-8')
+                # Check if the selected attachment is an image
+                if 'image' not in selected_attachment.content_type:
+                    await interaction.followup.send("Selected file is not an image.", ephemeral=True)
+                    return
+
+                # Process the image
+                buffer = BytesIO()
+                await selected_attachment.save(buffer)
+                buffer.seek(0)
+                encoded_image = base64.b64encode(buffer.getvalue()).decode('utf-8')
+
+                # Call the upscale method
+                await self.bot.get_cog('ImageGrid').upscale(self.message, encoded_image, user=interaction.user)
+            except Exception as e:
+                print(f"Error processing the image: {e}")
+                await interaction.followup.send("An error occurred while processing the image.", ephemeral=True)
 
 
-    class ImageSelect(Select):
-        def __init__(self, bot, image_files, payload):
+    # Select Menu for choosing an image for img2img
+    class ImageSelect(discord.ui.Select):
+        def __init__(self, bot, attachments):
             self.bot = bot
-            self.payload = payload
-            options = []
-            for i, image_file in enumerate(image_files):
-                # Create a SelectOption for each image file
-                option = discord.SelectOption(label=f"Image {i+1}", value=image_file)
-                options.append(option)
+            self.attachments = attachments
+            options = [discord.SelectOption(label=f"Image {i+1}", value=str(i)) for i in range(len(attachments))]
             super().__init__(placeholder='Choose an image to use as a reference', options=options)
 
         async def callback(self, interaction):
             await interaction.response.defer()
-            # Get the selected image file
-            selected_image_path = self.values[0]
+            selected_attachment = self.attachments[int(self.values[0])]
 
-        # TODO: Add the option to use different settings and prompt
-            
-            # Convert the image to Base64
-            with open(selected_image_path, "rb") as f:
-                image_data = f.read()
-                base64_image = base64.b64encode(image_data).decode('utf-8')
-            
-            # Update the payload
-            self.payload.update({"initimage": base64_image})
-            self.payload.update({"init_image_creativity": 0.8})
-            # TODO: maybe add another peram init_image_creativity
+            # Convert the selected attachment to Base64
+            buffer = BytesIO()
+            await selected_attachment.save(buffer)
+            buffer.seek(0)
+            encoded_image = base64.b64encode(buffer.getvalue()).decode('utf-8')
 
-            # Generate more images from the selected image
-            await self.bot.get_cog('APICalls').call_collect(interaction, self.payload)
+            # Call the img2img method with the encoded image and the user who initiated the interaction
+            await self.bot.get_cog('ImageGrid').img2img(interaction.message, encoded_image, interaction.user)
+
 
     """Buttons for Choosing a model"""
 
