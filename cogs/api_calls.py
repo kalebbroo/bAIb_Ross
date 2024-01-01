@@ -43,9 +43,9 @@ class APICalls(commands.Cog):
     @staticmethod
     def create_payload(session_id: str, prompt: Optional[str] = "Photorealistic, 4k, ultra high definition, portrait", 
                        negativeprompt: Optional[str] = "NSFW, low quality, blurry, low resolution, nipples, extra limbs",
-                    images: int = 1, batchsize: Optional[int] = 4, donotsave: bool = True, model: str = "colossusProjectXLSFW_v53Trained.safetensors", 
+                    images: int = 1, batchsize: Optional[int] = 4, donotsave: bool = True, model: str = "juggernautXL_version6Rundiffusion.safetensors", 
                     width: int = 1344, height: int = 768, cfgscale: int = 9, upscale: Optional[bool] = False,
-                    steps: int = 20, seed: int = -1, enableaitemplate: Optional[Any] = None, 
+                    steps: int = 28, seed: int = -1, enableaitemplate: Optional[Any] = None, 
                     init_image: Optional[str] = None, init_image_creativity: Optional[float] = None,
                     lora: Optional[str] = None, embedding: Optional[str] = None, 
                     video_format: Optional[str] = None, video_frames: Optional[int] = None, 
@@ -129,6 +129,15 @@ class APICalls(commands.Cog):
         #await APICalls.save_models_and_loras_to_files(self)
         upscale = payload.get('upscale', False)
         # Send a placeholder follow-up message
+        model_name = payload.get('model', 'Unknown')
+        width = payload.get('width', 'Unknown')
+        height = payload.get('height', 'Unknown')
+        seed = payload.get('seed', 'Unknown')
+        images = payload.get('images', 'Unknown')
+        steps = payload.get('steps', 'Unknown')
+        cfgscale = payload.get('cfgscale', 'Unknown')
+        prompt = payload.get("prompt", "No prompt")
+        negative = payload.get("negativeprompt", "No negative prompt")
         placeholder_embed = discord.Embed(description="Generating image, one moment please...", color=discord.Color.blue())
         placeholder_embed.set_footer(text=f"Requested by {interaction.user.display_name}", icon_url=interaction.user.avatar.url)
         placeholder = await interaction.followup.send(embed=placeholder_embed, wait=True)
@@ -144,16 +153,6 @@ class APICalls(commands.Cog):
             async with websockets.connect(uri, ping_interval=18000, ping_timeout=18100, max_size=2**30) as ws:
                 await ws.send(json.dumps(payload))
                 #print(ws.max_size)
-
-                model_name = payload.get('model', 'Unknown')
-                width = payload.get('width', 'Unknown')
-                height = payload.get('height', 'Unknown')
-                seed = payload.get('seed', 'Unknown')
-                images = payload.get('images', 'Unknown')
-                steps = payload.get('steps', 'Unknown')
-                cfgscale = payload.get('cfgscale', 'Unknown')
-                prompt = payload.get("prompt", "No prompt")
-                negative = payload.get("negativeprompt", "No negative prompt")
                 new_embed = discord.Embed(title=f'Generating images for {interaction.user.display_name}', 
                                           description=f'using `{model_name}`\n**Prompt:** `{prompt}` \n**Negative:** `{negative}`', 
                                           color=discord.Color.blue())

@@ -35,19 +35,28 @@ class ImageGrid(commands.Cog):
                     ).set_footer(text=f"Requested by {user.display_name}", icon_url=user.avatar.url)
                 )
                 return
-
+            prompt = """ 4K, high resolution, enhance details, sharp focus, preserve original style, 
+            refined edges, enhanced contrast, vibrant colors, deep shadows, bright highlights, subtle shading, 
+            natural lighting, clean lines, smooth gradients, accurate proportions, balanced composition, dynamic, 
+            color depth, noise reduction, texture sharpening, warm tone"""
+            negativeprompt = """low resolution, blurry, pixelated, noisy, grainy, dull colors, flat lighting, 
+            low contrast, low dynamic range, low color depth, low texture, low quality, low resolution, 
+            low detail, low sharpness, low focus, low definition, low clarity, low fidelity, low resolution, 
+            low quality, low resolution"""
             session_id = await self.bot.get_cog('APICalls').get_session()
             payload = self.bot.get_cog('APICalls').create_payload(
-                session_id, init_image=encoded_image, init_image_creativity=0.3,
+                session_id, prompt, negativeprompt, init_image=encoded_image, init_image_creativity=0.3,
                 width=width * 2, height=height * 2, upscale=True, images=1, steps=40, cfgscale=10, batchsize=1
             )
 
             buttons = self.bot.get_cog("Buttons")
             embed = discord.Embed(
-                title="Image Upscaling",
-                description="Ready to upscale the uploaded image.",
-                color=discord.Color.orange()
-            ).set_footer(text=f"Requested by {user.display_name}", icon_url=user.avatar.url)
+            title="Image Upscaling",
+            description=f"""Ready to upscale the uploaded image.\n\n**Original Dimensions:** {width}x{height}
+            \n**Upscaled Dimensions:** {width * 2}x{height * 2}\n\n**Prompt:** {prompt}\n**Negative:** {negativeprompt}""",
+            color=discord.Color.orange()
+        ).set_footer(text=f"Requested by {user.display_name}", icon_url=user.avatar.url)
+
 
             view = buttons.ConfirmationView(self.bot, payload, user.id)
             await message.channel.send(embed=embed, view=view)
@@ -122,6 +131,9 @@ class ImageGrid(commands.Cog):
         grid.paste(images[2], (0, height))
         grid.paste(images[3], (width, height))
 
+        # Double the size of the grid so its easier for the user to see
+        grid = grid.resize((grid.width * 2, grid.height * 2), Image.Resampling.LANCZOS)
+
         # Convert grid to BytesIO for Discord
         grid_io = BytesIO()
         grid.save(grid_io, format='PNG')
@@ -131,9 +143,13 @@ class ImageGrid(commands.Cog):
         unique_filename = f"grid-{int(time.time())}.png"
         return grid_io, unique_filename
     
-    def embed_grid(self, grid_io):
+    def embed_grid(self, grid_io, payload):
+        prompt = payload["prompt"]
+        negativeprompt = payload["negativeprompt"]
         file = discord.File(fp=grid_io, filename="grid.png")
         embed = discord.Embed(title="Image Preview", description="Here's a preview of your images.")
+        embed.add_field(name="Prompt", value=prompt, inline=False)
+        embed.add_field(name="Negative Prompt", value=negativeprompt, inline=False)
         embed.set_image(url="attachment://grid.png")
         return embed, file
 
@@ -156,7 +172,7 @@ class ImageGrid(commands.Cog):
             if len(state["preview_images"]) == state["num_images_expected"]:
                 # Process the set of four preview images
                 grid_io, grid_filename = self.create_grid(state["preview_images"])
-                embed, grid_file = self.embed_grid(grid_io)
+                embed, grid_file = self.embed_grid(grid_io, payload)
                 state["message"] = message
                 if state["message"]:
                     # Edit the existing message with the new grid and embed
