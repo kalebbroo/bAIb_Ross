@@ -168,7 +168,7 @@ List of available LoRAs:
     - Usage: Add "crying with tears" to prompt.
 42. Taylor Swift Genertates images of Taylor Swift.
     - Prompt activator: <lora:taylor_lora_sdxl_v1-000008:0.9>
-    - Usage: Add these "(OHWX WOMAN), OHWX" to prompt.
+    - Usage: Replace Taylor Swift with "(OHWX WOMAN), OHWX" in prompt.
 
 When you determine what the user wants and what LoRA to use, respond in this exact format excluding the tripple quotes """ """:
 
