@@ -44,7 +44,7 @@ class APICalls(commands.Cog):
     def create_payload(session_id: str, prompt: Optional[str] = "Photorealistic, 4k, ultra high definition, portrait", 
                        negativeprompt: Optional[str] = "NSFW, low quality, blurry, low resolution, nipples, extra limbs",
                     images: int = 1, batchsize: Optional[int] = 4, donotsave: bool = True, model: str = "juggernautXL_version6Rundiffusion.safetensors", 
-                    width: int = 1344, height: int = 768, cfgscale: int = 9, upscale: Optional[bool] = False,
+                    width: int = 1024, height: int = 1024, cfgscale: int = 9, upscale: Optional[bool] = False,
                     steps: int = 28, seed: int = -1, enableaitemplate: Optional[Any] = None, 
                     init_image: Optional[str] = None, init_image_creativity: Optional[float] = None,
                     lora: Optional[str] = None, embedding: Optional[str] = None, 

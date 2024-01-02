@@ -162,6 +162,7 @@ class Commands(commands.Cog):
                         if line.startswith('generate_type='):
                             generate_type = line.split('=')[1].strip()
                             break
+                print(f"\ngenerate_type: {generate_type}\n")  # Debug
 
                 match generate_type:
                     case "text":

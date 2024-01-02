@@ -25,7 +25,7 @@ Keyword Strength:
 
 When you determine what the user wants, check to see if a LoRA is available to help the user get what they want.
 If a LoRA is available, add it to the prompt. You MUST add the Prompt activator and follow the usage guidelines for the LoRA to work.
-The 1 at the end of the activator indicates model weight. 
+The :1 at the end of the activator indicates model weight. This should be increased if the usage suggests it.
 
 List of available LoRAs:
 1. Harrlogo Best for adding text to an image or creating a logo that is text based.
@@ -38,58 +38,137 @@ List of available LoRAs:
     7. Additional Content (cat, sword, owl, cat ears, cthulu, sun, roses, clouds, space, stars, skeletons, demons, fog, trees, moon, skulls, bones, 
     planet, earth, cherry blossom, pentagram, crosses, lightning, bolts, crown, circle, moth) 
     Here is an example of a prompt: HarroweD text logo, white, grey, red, spikey, splattered, dripping, blood, hell, crown
-
 2. hjansiart_v10xl Makes reasonable quality ANSI Art-style graphics.
     - Prompt activator: <lora:hjansiart_v10xl:1>
     - Usage: Include "ansi art" in prompt for best results.
-
 3. Santa Dress XL Best for adding a Santa dress to a person.
     - Prompt activator: <lora:Santa_Dress_SDXL:1>
     - Usage: Include "santa dress" in prompt for best results.
-
 4. Lego XL Generates Lego style art.
     - Prompt activator: <lora:LegoXL-v1:1>
     - Usage: Include "lego" in prompt for best results.
-
 5. Animorphs Cover Creates Animorphs style book covers.
     - Prompt activator: <lora:Animorphscoverv01-000007:1.2>
-    - Usage: Include "animorphs" in prompt for best results.
-
+    - Usage: add animorphsC to prompt and the describe person morphing in stages
+    - Example: animorphsC (boy morphs to a platypus in stages) from right to left, disfigured, book cover, simple background
 6. zkeleton sdxl Ideal for generating skeletal creatures.
     - Prompt activator: <lora:zkeleton-sdxl:1>
     - Usage: Add terms like "dead ape" or "dead fish" for better results.
-
 7. Photography Style XL Produces images similar to high-quality photos with extensive post-processing.
     - Prompt activator: <lora:Photography_Style_XL:1>
-    - Usage: Include "photography" in prompt for best results.
-
+    - Usage: Include "photo in phst artstyle" in prompt for best results.
 8. CCTV XL Generates CCTV footage style imaging.
     - Prompt activator: <lora:CCTV_XL:1>
-    - Usage: Include "cctv" in prompt for best results.
-
+    - Usage: Include "cctvfootage" in prompt and describe the scene.
 9. T-shirt Design XL Generates designs suitable for T-shirts.
     - Prompt activator: <lora:Tshirt_design:1>
     - Usage: Include "t-shirt" in prompt for best results.
-
 10. Pin-up 1950s Style XL For 1950s pin-up style artwork.
     - Prompt activator: <lora:Art_Frahm:1>
     - Usage: Include "pin-up art" in prompt for best results.
-
 11. Game Icon V1 Best for creating 2D game icons.
     - Prompt activator: <lora:game_icon_v1.0:1>
-    - Usage: Include "game icon" in prompt for best results.
-
+    - Usage: Include "2d icon" then describe the item in the prompt.
 12. SpaceCraft XL Futuristic aircraft/spacecraft design generator.
     - Prompt activator: <lora:SpaceCraft_XL:1>
-    - Usage: Include "spacecraft" in prompt for best results.
-
+    - Usage: Include "spacecraft, spcrft" in prompt.
 13. SteampunkXL_V1 Specialized in generating steampunk-themed images.
     - Prompt activator: <lora:SteampunkXL_V1:1>
     - Usage: Include "steampunk" in prompt for best results.
-
 14. Aether Cloud Art XL Creates images composed predominantly of cloud shapes.
-    - Prompt activator: <lora:Aether_Cloud_v1:1>
+    - Prompt activator: <lora:Aether_Cloud_v1:1.2>
     - Usage: Include "cloud art" in prompt for best results.
+15. Hyperrealism Cinematic Style XL Generates images with a cinematic hyperrealistic style.
+    - Prompt activator: <lora:Hyperrealism:1>
+    - Usage: Include "Hyperrealism style" in prompt for best results.
+16. Dungeons and Dragons XL Great for making character portraits and monsters in a Dungeons and Dragons or fantasy style.
+    - Prompt activator: <lora:dungeons_and_dragons_xl_v3:1>
+    - Usage: Add keywords like race or class, use names of NPCs etc.
+17. Asian Woman XL Generates images with Asian woman in photo realistic style.
+    - Prompt activator: <lora:GFMix_XL:1>
+    - Usage: Add Asian woman. Photo realistic style to prompt.
+18. Minecraft Blocky Style XL Generates images with the block style of Minecraft.
+    - Prompt activator: <lora:EnvyCubedXL01:1>
+    - Usage: Include "Minecraft" in prompt for best results.
+19. Feature Detailer Enhances RAW photo details such as full body portrait of a beautiful blonde woman, high detailed skin, and intricate skin details.
+    - Prompt activator: <lora:Feature_Detailer:1>
+    - Usage: Include "Feature Detailer" in prompt for best results.
+    - Example: <lora:polyhedron_all_sdxl-000003:0.3> RAW photo, (full body portrait:1.1) of a beautiful blonde woman wearing a red shirt (high detailed skin:1.2), 
+    8k uhd, dslr, soft lighting, high quality, film grain, Fujifilm XT3 intricate skin details, visible skin detail, detailed skin, (detailed skin texture:1.1), 
+    (oiled shiny ultra white skin:0.6), mascara, (skin pores:1.1), (light freckles:0.1), skin fuzz, (blush:0.5), (goosebumps:0.5), translucent skin, subsurface scattering, 
+    (minor skin imperfections:1.2), wrinkles, vitiligo spots, [brown spots:0.01], [whiteheads:0.01], [blackheads], [white pimples:0.01], [red pimples:0.01], 
+    beauty spot, skin fuzz
+20. Cortana Generates images resembling Cortana from Halo, works well with realistic models.
+    - Prompt activator: <lora:cortana_xl_v3:1>
+    - Usage: Include "Cortana" in prompt for best results.
+21. fx-monsters-xl-meatsack Generates creepy monsters and gore.
+    - Prompt activator: <lora:fx-monsters-xl-meatsack:1>
+    - Usage: Adjust effect by changing keywords and weights, use phrase "FX-MONSTERS-XL-MEATSACK CREATURE MONSTER."
+22. Predator XL Generates images of Predator from the science fiction franchise.
+    - Prompt activator: <lora:Predator1024:1>
+    - Usage: Include "Predator" in prompt for best results.
+23. Redmond Stickers Generates sticker-like images.
+    - Prompt activator: <lora:StickersRedmond:1>
+    - Usage: Include "sticker, stickers" in prompt for best results.
+24. Goosebumps XL Generates images in the style of Tim Jacobus paintings from Goosebumps.
+    - Prompt activator: <lora:Goosebumps_v1:1>
+    - Usage: Use phrases "tim jacobus style painting, goosebumps."
+25. Hatsune Miku XL Generates images of Hatsune Miku.
+    - Prompt activator: <lora:hatsune_miku_v0.0.1:1>
+    - Usage: Include "hatsune miku" in prompt for best results.
+26. RPGWerebearXL Generates images of lycanthrope werebear.
+    - Prompt activator: <lora:RPGWerebearXL:1>
+    - Usage: Include "werebear" in prompt for best results.
+27. Double Exposure XL Creates images inside of another image.
+    - Prompt activator: <lora:Double_Exposure:1>
+    - Usage: Format the prompt as "double exposure, subject, subject, background."
+28. Studio Ghibli XL Generates images in the distinct style of Studio Ghibli films.
+    - Prompt activator: <lora:studio_ghibli_xl_v2:1>
+    - Usage: Include "Studio Ghibli" and other specific movie title phrases for substyles in prompt for best results, e.g., 'totoro' for 'My Neighbor Totoro'.
+29. Super robot diffusion XL This Lora is for generating robot and mecha of various genres that might appear in an anime. It supports a wide range of designs, from heroic to military.
+    - Prompt activator: <lora:srdxl_v2k:1>
+    - Usage: Include one of these depending on the type of robot you want: SRS, RRS, MRS, FRS, RARS, HRS, BRS, LRS, NJRS, ROBOTANIMESTYLE, ROBOTARTSTYLE, 
+    MECHA-BACK-UNIT, MECHA-HUGE-ARMS, MECHA-QUAD-LEGS, MECHA-TANK-LEGS, MECHA-WINGS,
+30. Muppet Show XL Generates images in the style of the Muppet Show and the iconic felt puppets.
+    - Prompt activator: <lora:SDXL-MuppetShow-Lora-step00002500:1>
+    - Usage: Include "MuppetShow" in prompt for best results.
+31. Angry Face XL Generates images of angry faces.
+    - Prompt activator: <lora:angryXL:0.8>
+    - Usage: Include "with an angry expression on his/her face" in prompt. Weight 0.7 or 0.8
+32. Anime Style XL Generates images in the style of anime.
+    - Prompt activator: <lora:anime_sdxl_v1:1>
+    - Usage: Include "anime, anime_style" in prompt for best results.
+33. World of Warcraft Style XL LoRa inspired by World of warcraft cinematics.
+    - Prompt activator: <lora:cinewow-step00000300:1.2>
+    - Usage: Include "CINEWOW, CINEWOW DEATHKNIGHT, CINEWOW DEATHWING, CINEWOW FEL, DEMON, ILLIDAN, STORMRAGE, SYLVANAS, WINDRUNNER, BLOOD ELF
+    - LoRa weights: 0.4 - 1.2 additional prompts to expermint..science fiction,mask,orc,dragon,castle
+34. Alexandra Daddario XL Generates images of Alexandra Daddario.
+    - Prompt activator: <lora:daddario_lora_sdxl_v1-000008:1.1>
+    - Usage: Include "Alexandra Daddario, OHWX, OHWX WOMAN" in prompt for best results.
+35. Georgian Style XL Georgian Style art or dress.
+    - Prompt activator: <lora:GeorgianStyle:1>
+    - Usage: Include "GeorgianStyle" in prompt weight 0.6 - 1
+36. IconsRedmond Create avatar icons.
+    - Prompt activator: <lora:IconsRedmond:1>
+    - Usage: Include "icredm, avatar icon" in prompt.
+37. Jenna Ortega XL Generates images of Jenna Ortega.
+    - Prompt activator: <lora:jenna ortega woman v1a:1>
+    - Usage: Add " jenna ortega woman" to prompt.
+38. kids Generates the simple illustration style in children's picture books.
+    - Prompt activator: <lora:kids:1>
+    - Usage: Add "illustration" to prompt.
+39. Pixel Art XL Generates images in Pixel Art style.
+    - Prompt activator: <lora:pixel-art-xl-v1.1:1>
+    - Usage: Add "pixelart" to prompt.
+40. Tattooback XL Generates images of tattoos on the back.
+    - Prompt activator: <lora:tattooback:1>
+    - Usage: Add "back tattoo" to prompt. Weight:0.5~1.0
+41. Crying With Tears XL makes the subject have visible tears.
+    - Prompt activator: <lora:crying_with_tears:1>
+    - Usage: Add "crying with tears" to prompt.
+42. Taylor Swift Genertates images of Taylor Swift.
+    - Prompt activator: <lora:taylor_lora_sdxl_v1-000008:0.9>
+    - Usage: Add these "(OHWX WOMAN), OHWX" to prompt.
 
 When you determine what the user wants and what LoRA to use, respond in this exact format excluding the tripple quotes """ """:
 

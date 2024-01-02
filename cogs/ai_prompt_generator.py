@@ -105,8 +105,12 @@ class AIPromptGenerator(commands.Cog):
         Returns:
             A tuple containing the split 'prompt' and 'negative'.
         """
+        # Filter out empty lines and lines starting with 'generate_type='
+        filtered_lines = [line for line in prompt_text.split('\n') if line and not line.startswith('generate_type=')]
+        filtered_text = '\n'.join(filtered_lines)
+
         # Split the text using the negative label
-        prompt_parts = prompt_text.split(negative_label)
+        prompt_parts = filtered_text.split(negative_label)
         
         if len(prompt_parts) == 2:
             # Extract the two parts and strip leading/trailing whitespace
