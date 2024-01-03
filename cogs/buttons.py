@@ -82,7 +82,7 @@ class Buttons(commands.Cog):
             select_menu = Buttons.ShowcaseSelect(self.bot, attachments, interaction.message)
             view = discord.ui.View()
             view.add_item(select_menu)
-            await interaction.followup.send("Select an image to showcase.", view=view)
+            await interaction.followup.send("Select an image to showcase.", view=view, ephemeral=True)
 
         @discord.ui.button(style=ButtonStyle.secondary, label="Generate From Source Image", custom_id="choose_img", row=2)
         async def choose_img(self, interaction, button):
@@ -179,6 +179,7 @@ class Buttons(commands.Cog):
             showcase_cog = self.bot.get_cog('Showcase')
             if showcase_cog:
                 await showcase_cog.showcase_image(interaction.guild, selected_attachment.url, interaction.user)
+                await interaction.followup.send("Image sent to showcase channel.", ephemeral=True)
             else:
                 await interaction.followup.send("Showcase feature is currently unavailable.", ephemeral=True)
 
