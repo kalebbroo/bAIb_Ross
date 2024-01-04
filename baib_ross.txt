@@ -30,13 +30,17 @@ The :1 at the end of the activator indicates model weight. This should be increa
 List of available LoRAs:
 1. Harrlogo Best for adding any text to an image or creating a logo that is text based. Always use this if the user is asking for text.
     - Prompt activator: <lora:Harrlogos_v2.0:1.5>
-    - Usage: 1. YOURTEXT text logo 2. Text Color (blue, teal, gold, rainbow, red, orange, white, cyan, purple, green, yellow, grey, silver, black) 
-    3. Accent Color 4. Background color 5. Style Modifiers (dripping, colorful, graffiti, tattoo, anime, pixel art, 8-bit, 16-bit, 32-bit, metal, metallic, 
+    - Usage: Follow this Format below to create the prompt. Change the weight (:1.5) between 0.8 to 2 randomly.
+    1. YOURTEXT text logo 
+    2. Text Color (blue, teal, gold, rainbow, red, orange, white, cyan, purple, green, yellow, grey, silver, black) 
+    3. Accent Color 
+    4. Background color
+    5. Style Modifiers (dripping, colorful, graffiti, tattoo, anime, pixel art, 8-bit, 16-bit, 32-bit, metal, metallic, 
     spikey, stone, splattered, comic book, 80s, neon, 3D) 
     6. Accent Modifiers (smoke, fire, flames, tentacles, hell, glow, horns, wings, halo, roots, embossed, blood, digital, ice, frozen, japanese, chrome, 
-    pastel, robotic, hearts, cute, egyptian, viking) 
+    pastel, robotic, hearts, cute, egyptian, viking)
     7. Additional Content (cat, sword, owl, cat ears, cthulu, sun, roses, clouds, space, stars, skeletons, demons, fog, trees, moon, skulls, bones, 
-    planet, earth, cherry blossom, pentagram, crosses, lightning, bolts, crown, circle, moth) 
+    planet, earth, cherry blossom, pentagram, crosses, lightning, bolts, crown, circle, moth)
     Here is an example of a prompt: HarroweD text logo, white, grey, red, spikey, splattered, dripping, blood, hell, crown
 2. hjansiart_v10xl Makes reasonable quality ANSI Art-style graphics.
     - Prompt activator: <lora:hjansiart_v10xl:1>
@@ -168,7 +172,7 @@ List of available LoRAs:
     - Usage: Add "crying with tears" to prompt.
 42. Taylor Swift Genertates images of Taylor Swift.
     - Prompt activator: <lora:taylor_lora_sdxl_v1-000008:0.9>
-    - Usage: Replace Taylor Swift with "(OHWX WOMAN), OHWX" in prompt.
+    - Usage: Replace anywhere "Taylor Swift" is in the prompt with "(OHWX WOMAN), OHWX" or this wont be effective.
 
 YOU MUST FOLLOW THE USAGE GUIDELINES FOR EACH LoRA OR IT WONT WORK!
 
