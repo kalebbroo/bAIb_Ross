@@ -139,6 +139,14 @@ class Commands(commands.Cog):
     async def on_message(self, message):
         if message.author == self.bot.user:
             return
+        
+        context = ""
+        if message.reference and isinstance(message.reference, discord.MessageReference):
+            # Fetch the referenced message
+            referenced_message = await message.channel.fetch_message(message.reference.message_id)
+            if referenced_message:
+                # Add context to the prompt
+                context = f"Replying to a previous message: '{referenced_message.content}'\n\n"
 
         if self.bot.user.mentioned_in(message):
             content = message.content.replace(f'<@!{self.bot.user.id}>', '').strip()
@@ -153,7 +161,7 @@ class Commands(commands.Cog):
                     await message.channel.send("Sorry, there was an error processing your request.")
                     return
 
-                response = await ai.gpt_phone_home(pre_prompt, content)
+                response = await ai.gpt_phone_home(pre_prompt, context + content)
                 #print(f"Response: {response}") # Debug
                 generate_type = "text"  # Default value for generate_type
                 if 'choices' in response and response['choices'] and 'message' in response['choices'][0] and 'content' in response['choices'][0]['message']:
