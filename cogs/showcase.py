@@ -20,10 +20,14 @@ class Showcase(commands.Cog):
         async def vote_down(self, interaction: discord.Interaction, button: discord.ui.Button):
             await self.process_vote(interaction, "downvote")
 
-        @discord.ui.button(label="Report", style=discord.ButtonStyle.secondary, emoji="⚠️")
+        @discord.ui.button(label="Report", style=discord.ButtonStyle.secondary, emoji="⚠️", custom_id="report")
         async def report(self, interaction: discord.Interaction, button: discord.ui.Button):
             await interaction.response.defer(ephemeral=True)
             await self.process_vote(interaction, "report")
+            # Disable the report button
+            button.disabled = True
+            # Update the message with the new view
+            await interaction.message.edit(view=self)
             # Notify Admins
             for member in interaction.guild.members:
                 if discord.utils.get(member.roles, name="Admin"):
@@ -93,7 +97,7 @@ class Showcase(commands.Cog):
             voting_buttons = self.VotingButtons(self, message.id)
             await message.edit(view=voting_buttons)
             # Start a new thread for the image
-            await message.start_thread(name="Discussion the image")
+            await message.create_thread(name="Discussion the image")
 
         except Exception as e:
             print(f"Failed to showcase image: {e}")
