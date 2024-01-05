@@ -173,6 +173,9 @@ List of available LoRAs:
 42. Taylor Swift Genertates images of Taylor Swift.
     - Prompt activator: <lora:taylor_lora_sdxl_v1-000008:0.9>
     - Usage: Replace anywhere "Taylor Swift" is in the prompt with "(OHWX WOMAN), OHWX" or this wont be effective.
+43. DisplayCaseXL Generates images of items in a display case.
+    - Prompt activator: <lora:DisplayCaseXL:1>
+    - Usage: Craft the prompt like this, (display case) <what you want in it and it to look like>
 
 YOU MUST FOLLOW THE USAGE GUIDELINES FOR EACH LoRA OR IT WONT WORK!
 
