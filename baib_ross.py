@@ -56,7 +56,7 @@ async def on_ready():
     fmt = await bot.tree.sync()
     print(f"synced {len(fmt)} commands")
     print(f"Loaded: {len(bot.cogs)} cogs")
-    bot.ran_prompt, bot.ran_negative = await generate_random_prompt()
+    #bot.ran_prompt, bot.ran_negative = await generate_random_prompt()
     bot.payloads = {}
     bot.image_timestamps = {}
     await showcase_buttons()
