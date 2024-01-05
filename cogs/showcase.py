@@ -12,11 +12,11 @@ class Showcase(commands.Cog):
             self.showcase_cog = showcase_cog
             self.message_id = message_id
 
-        @discord.ui.button(label="Vote Up", style=discord.ButtonStyle.success, emoji="👍")
+        @discord.ui.button(label="Vote", style=discord.ButtonStyle.success, emoji="👍")
         async def vote_up(self, interaction: discord.Interaction, button: discord.ui.Button):
             await self.process_vote(interaction, "upvote")
 
-        @discord.ui.button(label="Vote Down", style=discord.ButtonStyle.danger, emoji="👎")
+        @discord.ui.button(label="Vote", style=discord.ButtonStyle.danger, emoji="👎")
         async def vote_down(self, interaction: discord.Interaction, button: discord.ui.Button):
             await self.process_vote(interaction, "downvote")
 
@@ -36,11 +36,23 @@ class Showcase(commands.Cog):
                     except discord.errors.Forbidden:
                         pass  # Member has DMs off or bot cannot send DMs to them
 
+        @discord.ui.button(label="", style=discord.ButtonStyle.secondary, emoji="🗑️", custom_id="delete")
+        async def delete(self, interaction: discord.Interaction, button: discord.ui.Button):
+            await interaction.response.defer(ephemeral=True)
+            # Get the user display name from the description of the embed
+            user_name = interaction.message.embeds[0].description.split()[-1]
+            # Check if the user is the author of the message
+            if interaction.user.display_name != user_name:
+                await interaction.followup.send("You cannot delete someone else's showcase image", ephemeral=True)
+                return
+            # Delete the message
+            await interaction.followup.send("Your showcase has been deleted", ephemeral=True)
+            await interaction.message.delete()
+
         async def process_vote(self, interaction: discord.Interaction, vote_type: str):
             user_name = interaction.user.name
             message = await interaction.channel.fetch_message(self.message_id)
             embed = message.embeds[0]
-            reported = False
 
             # Extracting voter names from embed fields
             upvotes = embed.fields[0].value.split('\n') if embed.fields else []
@@ -59,13 +71,8 @@ class Showcase(commands.Cog):
                     downvotes.append(user_name)
                     response_message = "You voted for this image to NOT be the next server icon! If this was a mistake you can change your vote by clicking the upvote button"
                 case "report":
-                    if reported:
-                        await interaction.followup.send(f"This image has already been reported. Just remember, spammers get ban hammers.", ephemeral=True)
-                        return
-                    else:
-                        reported = True
-                        await interaction.followup.send(f"Reported to admins. Just remember, snitches get stitches.", ephemeral=True)
-                        return  # Don't update the embed
+                    await interaction.followup.send(f"Reported to admins. Just remember, snitches get stitches.", ephemeral=True)
+                    return  # Don't update the embed
 
             # Updating the embed with new votes
             embed.clear_fields()

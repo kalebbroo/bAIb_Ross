@@ -66,12 +66,16 @@ class ImageGrid(commands.Cog):
             await message.channel.send("An error occurred while processing the image.")
 
 
-    async def img2img(self, message, encoded_image, user: discord.User):
+    async def img2img(self, message, encoded_image, user: discord.User, payload):
         """Generate an image based on the input image."""
         try:
             if not encoded_image:
                 await message.channel.send("No image found or provided for image-to-image generation.")
                 return
+
+            # Get the prompt and negative prompt from the payload
+            prompt = payload["prompt"]
+            negative = payload["negativeprompt"]
 
             # Decode the base64 string to get the image
             image_data = base64.b64decode(encoded_image)
@@ -82,13 +86,13 @@ class ImageGrid(commands.Cog):
 
             session_id = await self.bot.get_cog('APICalls').get_session()
             payload = self.bot.get_cog('APICalls').create_payload(
-                session_id, init_image=encoded_image, init_image_creativity=0.6,
-                width=width, height=height
+                session_id, prompt=prompt, negativeprompt=negative, init_image=encoded_image, 
+                init_image_creativity=0.6, width=width, height=height
             )
             buttons = self.bot.get_cog("Buttons")
             embed = discord.Embed(
                 title="Image to Image Generation",
-                description="Create an image based on the uploaded image.",
+                description=f"Create an image based on the uploaded image.\n**Prompt:** ```{prompt}```\n**Negative:** ```{negative}```",
                 color=discord.Color.green()
             ).set_footer(text=f"Requested by {user.display_name}", icon_url=user.avatar.url)
 

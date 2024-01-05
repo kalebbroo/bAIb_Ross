@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 import os
 from dotenv import load_dotenv
+import asyncio
 
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix='+', intents=intents)
@@ -12,22 +13,31 @@ load_dotenv()
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 
 async def showcase_buttons():
-    # Refresh Showcase Buttons
     showcase_cog = bot.get_cog('Showcase')
     if showcase_cog:
         for guild in bot.guilds:
             showcase_channel = discord.utils.get(guild.channels, name='showcase', type=discord.ChannelType.text)
             if showcase_channel:
+                print(f"Refreshing Showcase buttons in guild {guild.name}.")
                 try:
-                    # Fetch recent messages from the showcase channel
-                    async for message in showcase_channel.history(limit=100):  # Adjust limit as needed
+                    messages = [message async for message in showcase_channel.history(limit=100)]
+                    for i, message in enumerate(messages):
                         if message.author == bot.user and message.embeds:
                             voting_buttons = showcase_cog.VotingButtons(showcase_cog, message.id)
                             await message.edit(view=voting_buttons)
+                            if i % 2 == 0:  # Every 2 messages, wait a bit longer
+                                await asyncio.sleep(10)
+                            else:
+                                await asyncio.sleep(2)
                 except Exception as e:
-                    print(f"Failed to refresh Showcase buttons in guild {guild.name}: {e}")
+                    if 'rate limited' in str(e).lower():
+                        print("Hit rate limit, waiting longer.")
+                        await asyncio.sleep(30)  # Wait longer if rate limited
+                    else:
+                        print(f"Failed to refresh Showcase buttons in guild {guild.name}: {e}")
             else:
                 print(f"Showcase channel not found in guild {guild.name}.")
+        print("Finished refreshing Showcase buttons.")
 
 async def generate_random_prompt():
     ai = bot.get_cog("AIPromptGenerator")

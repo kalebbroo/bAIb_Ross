@@ -46,7 +46,7 @@ class Buttons(commands.Cog):
 
         @discord.ui.button(style=ButtonStyle.primary, label="Upscale", custom_id="upscale", row=1)
         async def upscale_button(self, interaction, button):
-            await interaction.response.defer()
+            await interaction.response.defer(ephermal=True)
             try:
                 # Extract attachments from the message
                 attachments = interaction.message.attachments
@@ -55,10 +55,10 @@ class Buttons(commands.Cog):
                     return
 
                 # Pass the message directly to the UpscaleSelect menu
-                select_menu = Buttons.UpscaleSelect(self.bot, attachments, interaction.message)
+                select_menu = Buttons.UpscaleSelect(self.bot, self.payload, attachments, interaction.message)
                 view = discord.ui.View()
                 view.add_item(select_menu)
-                await interaction.followup.send("Select an image to upscale", view=view)
+                await interaction.followup.send("Select an image to upscale", view=view, ephemeral=True)
 
             except Exception as e:
                 print(f"An exception occurred in the upscale button: {e}")
@@ -71,9 +71,9 @@ class Buttons(commands.Cog):
             await interaction.response.send_message("Your shame has been deleted", ephemeral=True)
             await interaction.message.delete()
 
-        @discord.ui.button(style=ButtonStyle.secondary, label="Add to Showcase", custom_id="showcase", row=1)
+        @discord.ui.button(style=ButtonStyle.success, label="Add to Showcase", custom_id="showcase", row=1)
         async def showcase(self, interaction, button):
-            await interaction.response.defer()
+            await interaction.response.defer(ephemeral=True)
             attachments = interaction.message.attachments
             if not attachments:
                 await interaction.followup.send("No images found to showcase.", ephemeral=True)
@@ -86,23 +86,24 @@ class Buttons(commands.Cog):
 
         @discord.ui.button(style=ButtonStyle.secondary, label="Generate From Source Image", custom_id="choose_img", row=2)
         async def choose_img(self, interaction, button):
-            await interaction.response.defer()
+            await interaction.response.defer(ephemeral=True)
             attachments = interaction.message.attachments
             if not attachments:
                 await interaction.followup.send("No images found to use.", ephemeral=True)
                 return
 
-            select_menu = Buttons.ImageSelect(self.bot, attachments)
+            select_menu = Buttons.ImageSelect(self.bot, self.payload, attachments)
             view = discord.ui.View()
             view.add_item(select_menu)
-            await interaction.channel.send("Select an image to generate more from.", view=view)
+            await interaction.followup.send("Select an image to generate more from.", view=view, ephemeral=True)
 
     """Selecet Menus for choosing an img2img, upscale, and showcase"""
 
     # Select Menu for choosing an image to upscale
     class UpscaleSelect(discord.ui.Select):
-        def __init__(self, bot, attachments, message):
+        def __init__(self, bot, payload, attachments, message):
             self.bot = bot
+            self.payload = payload
             self.message = message
             self.attachments = attachments
 
@@ -139,8 +140,9 @@ class Buttons(commands.Cog):
 
     # Select Menu for choosing an image for img2img
     class ImageSelect(discord.ui.Select):
-        def __init__(self, bot, attachments):
+        def __init__(self, bot, payload, attachments):
             self.bot = bot
+            self.payload = payload
             self.attachments = attachments
             options = [discord.SelectOption(label=f"Image {i+1}", value=str(i)) for i in range(len(attachments))]
             super().__init__(placeholder='Choose an image to use as a reference', options=options)
@@ -156,7 +158,7 @@ class Buttons(commands.Cog):
             encoded_image = base64.b64encode(buffer.getvalue()).decode('utf-8')
 
             # Call the img2img method with the encoded image and the user who initiated the interaction
-            await self.bot.get_cog('ImageGrid').img2img(interaction.message, encoded_image, interaction.user)
+            await self.bot.get_cog('ImageGrid').img2img(interaction.message, encoded_image, interaction.user, payload=self.payload)
 
     class ShowcaseSelect(discord.ui.Select):
         def __init__(self, bot, attachments, message):

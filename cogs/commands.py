@@ -203,8 +203,12 @@ class Commands(commands.Cog):
                                 # Convert the image to base64
                                 encoded_image = base64.b64encode(buffer.getvalue()).decode('utf-8')
 
+                                payload = {
+                                    "prompt": "Your prompt goes here",
+                                    "negativeprompt": "Your negative prompt goes here"
+                                }
                                 # Call the img2img method with the encoded image and user
-                                await self.bot.get_cog('ImageGrid').img2img(message, encoded_image, message.author)
+                                await self.bot.get_cog('ImageGrid').img2img(message, encoded_image, message.author, payload)
 
                             except Exception as e:
                                 print(f"Error while processing the image: {e}")
