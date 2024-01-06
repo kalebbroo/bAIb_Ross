@@ -160,6 +160,10 @@ class Commands(commands.Cog):
                 except FileNotFoundError:
                     await message.channel.send("Sorry, there was an error processing your request.")
                     return
+                try:
+                    icon_url = message.author.avatar.url
+                except AttributeError:
+                    icon_url = message.author.default_avatar.url
 
                 response = await ai.gpt_phone_home(pre_prompt, context + content)
                 #print(f"Response: {response}") # Debug
@@ -188,7 +192,7 @@ class Commands(commands.Cog):
                             description=f"Create an image with this? \nPrompt: ```{prompt}```\nNegative: ```{negative}```",
                             color=discord.Color.blue()
                         )
-                        embed.set_footer(text=f"Requested by {message.author.display_name}", icon_url=message.author.avatar.url)
+                        embed.set_footer(text=f"Requested by {message.author.display_name}", icon_url=icon_url)
                         view = buttons.ConfirmationView(self.bot, payload, message.author.id)
                         await message.channel.send(embed=embed, view=view)
                     case "img2img":
@@ -231,7 +235,7 @@ class Commands(commands.Cog):
                             description=f"Create a video with this? \nPrompt: ```{prompt}```\nNegative: ```{negative}```",
                             color=discord.Color.blue()
                         )
-                        embed.set_footer(text=f"Requested by {message.author.display_name}", icon_url=message.author.avatar.url)
+                        embed.set_footer(text=f"Requested by {message.author.display_name}", icon_url=icon_url)
                         view = buttons.ConfirmationView(self.bot, payload, message.author.id)
                         await message.channel.send(embed=embed, view=view)
                     case "img2video":
@@ -259,7 +263,7 @@ class Commands(commands.Cog):
                                                            Do you want to continue?""",
                                     color=discord.Color.green()
                                 )
-                                embed.set_footer(text=f"Requested by {message.author.display_name}", icon_url=message.author.avatar.url)
+                                embed.set_footer(text=f"Requested by {message.author.display_name}", icon_url=icon_url)
                                 view = buttons.ConfirmationView(self.bot, payload, message.author.id)
                                 await message.channel.send(embed=embed, view=view)
                             except Exception as e:
@@ -292,7 +296,7 @@ class Commands(commands.Cog):
                             description="Something went wrong. Please try again.",
                             color=discord.Color.red()
                         )
-                        embed.set_footer(text=f"Requested by {message.author.display_name}", icon_url=message.author.avatar.url)
+                        embed.set_footer(text=f"Requested by {message.author.display_name}", icon_url=icon_url)
                         await message.channel.send(embed=embed)
 
 
