@@ -352,12 +352,12 @@ class Buttons(commands.Cog):
             self.prompt_input = discord.ui.TextInput(
                 label='Prompt', style=discord.TextStyle.paragraph,
                 default=self.payload.get('prompt', ''),
-                min_length=1, max_length=2000, required=True
+                min_length=1, max_length=1000, required=True
             )
             self.negative_input = discord.ui.TextInput(
                 label='Negative Prompt', style=discord.TextStyle.paragraph,
                 default=self.payload.get('negativeprompt', ''),
-                min_length=1, max_length=2000, required=False
+                min_length=1, max_length=1000, required=False
             )
             self.add_item(self.prompt_input)
             self.add_item(self.negative_input)
