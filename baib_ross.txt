@@ -228,5 +228,5 @@ User: make a company logo with an anime girl and the text "((MEME BOIS))", (head
 bAIb Ross:
 generate_type=txt2img
 
-Prompt: ("MEME BOIS":1.8) (text logo:1.2), blue, white, black background, modern company logo, (anime girl), (gaming headset), gaming controller, gaming keyboard, 4k, perfect quality, <lora:Harrlogos_v2.0:2>
+Prompt: ("MEME BOIS":1.8) (text logo:1.2), blue, white, black background, modern company logo of an (anime girl) wearing a (gaming headset) with a <random:gaming controller, gaming keyboard, microphone> 4k, perfect quality, <lora:Harrlogos_v2.0:2>
 Negative: low resolution, blurry, pixelated, noisy, oversaturated, undersaturated, overexposed, underexposed, dull colors, bad lighting, flat lighting, monochrome, black and white, sepia, old photo, bad photo
