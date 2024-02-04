@@ -225,7 +225,7 @@ class Commands(commands.Cog):
                         session_id = await api_call.get_session()
                         payload = api_call.create_payload(session_id, prompt=prompt, negativeprompt=negative, 
                                                         video_format="gif", video_frames=25, video_fps=60, upscale=True,
-                                                        video_model="OfficialStableDiffusion/svd_xt.safetensors", video_steps=20, 
+                                                        video_model="OfficialStableDiffusion/svd_xt_1_1.safetensors", video_steps=20, 
                                                         video_cfg=2.5, video_min_cfg=1, video_motion_bucket="127",
                                                         width=1344, height=768, images=1, batchsize=1
                                                         )
@@ -251,7 +251,7 @@ class Commands(commands.Cog):
                                 payload = api_call.create_payload(session_id, prompt=prompt, negativeprompt=negative, 
                                                         init_image=encoded_image, init_image_creativity=0,
                                                         video_format="gif", video_frames=25, video_fps=60, upscale=True,
-                                                        video_model="OfficialStableDiffusion/svd_xt.safetensors", video_steps=20, 
+                                                        video_model="OfficialStableDiffusion/svd_xt_1_1.safetensors", video_steps=20, 
                                                         video_cfg=2.5, video_min_cfg=1, video_motion_bucket="127",
                                                         width=1344, height=768, images=1, batchsize=1
                                                         )
